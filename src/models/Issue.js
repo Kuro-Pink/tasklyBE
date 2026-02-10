@@ -1,0 +1,60 @@
+import mongoose from 'mongoose';
+
+const issueSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    description: String,
+
+    type: {
+      type: String,
+      enum: ['Epic', 'Story', 'Task', 'Bug', 'Subtask'],
+      required: true,
+    },
+
+    project: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Project',
+      required: true,
+    },
+
+    parent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Issue',
+      default: null,
+    },
+
+    status: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Status',
+      required: true,
+    },
+
+    sprint: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Sprint',
+      default: null,
+    },
+
+    assignee: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+
+    reporter: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+
+    priority: {
+      type: String,
+      enum: ['Low', 'Medium', 'High'],
+      default: 'Medium',
+    },
+
+    number: Number,
+  },
+  { timestamps: true },
+);
+
+export default mongoose.model('Issue', issueSchema);
