@@ -2,7 +2,7 @@ import {
   getActivitiesByProjectService,
   getActivitiesByIssueService,
   getActivitiesByUserService,
-} from '../services/activityService.js';
+} from '../services/activity.service.js';
 
 export const getProjectActivities = async (req, res) => {
   const data = await getActivitiesByProjectService(req.params.projectId);

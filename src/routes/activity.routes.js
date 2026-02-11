@@ -3,7 +3,7 @@ import {
   getProjectActivities,
   getIssueActivities,
   getMyActivities,
-} from '../controllers/activityController.js';
+} from '../controllers/activity.controller.js';
 
 const router = express.Router();
 
