@@ -23,10 +23,7 @@ const sprintSchema = new mongoose.Schema(
 
 /* ================= INDEX ================= */
 
-// Lấy sprint theo project (Board page)
-sprintSchema.index({ project: 1, createdAt: -1 });
-
-// Sort theo ngày bắt đầu
-sprintSchema.index({ project: 1, startDate: -1 });
+sprintSchema.index({ project: 1, isActive: 1 });
+sprintSchema.index({ project: 1, startDate: 1 });
 
 export default mongoose.model('Sprint', sprintSchema);

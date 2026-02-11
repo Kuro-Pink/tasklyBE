@@ -20,6 +20,12 @@ const commentSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-commentSchema.index({ issue: 1, createdAt: 1 });
+/* ================= INDEX ================= */
+
+// Lấy comment theo issue (mới nhất lên đầu)
+commentSchema.index({ issue: 1, createdAt: -1 });
+
+// Lọc comment theo author
+commentSchema.index({ author: 1 });
 
 export default mongoose.model('Comment', commentSchema);

@@ -74,4 +74,7 @@ issueSchema.index({ assignee: 1 });
 // Project issues
 issueSchema.index({ project: 1, createdAt: -1 });
 
+// Search number trong project
+issueSchema.index({ project: 1, number: 1 }, { unique: true });
+
 export default mongoose.model('Issue', issueSchema);
