@@ -1,6 +1,7 @@
 import Project from '../models/Project.js';
 import ApiError from '../utils/ApiError.js';
 import { emitProjectCreated, emitProjectUpdated } from '../utils/socketEmitter.js';
+import { createNotificationService } from './notification.service.js';
 
 /* ===================== CREATE ===================== */
 export const createProjectService = async (data, userId) => {
@@ -76,6 +77,17 @@ export const addMemberService = async (projectId, memberId, role, userId) => {
   project.members.push({ user: memberId, role: role || 'Member' });
   await project.save();
   await project.populate('members.user', 'name email avatar');
+
+  /* ===== NOTIFICATION ===== */
+  await createNotificationService({
+    user: memberId,
+    title: 'Added to project',
+    message: `You were added to ${project.name}`,
+    type: 'PROJECT_INVITE',
+    project: project._id,
+  });
+
+  /* ===== SOCKET ===== */
   emitProjectUpdated(project._id, project);
 
   return project;
@@ -94,6 +106,17 @@ export const removeMemberService = async (projectId, memberId, userId) => {
 
   await project.save();
   await project.populate('members.user', 'name email avatar');
+
+  /* ===== NOTIFICATION ===== */
+  await createNotificationService({
+    user: memberId,
+    title: 'Removed from project',
+    message: `You were removed from ${project.name}`,
+    type: 'PROJECT_REMOVE',
+    project: project._id,
+  });
+
+  /* ===== SOCKET ===== */
   emitProjectUpdated(project._id, project);
   return project;
 };
@@ -113,6 +136,17 @@ export const changeRoleService = async (projectId, memberId, role, userId) => {
   member.role = role;
   await project.save();
   await project.populate('members.user', 'name email avatar');
+
+  /* ===== NOTIFICATION ===== */
+  await createNotificationService({
+    user: memberId,
+    title: 'Role changed',
+    message: `Your role in ${project.name} is now ${role}`,
+    type: 'PROJECT_ROLE',
+    project: project._id,
+  });
+
+  /* ===== SOCKET ===== */
   emitProjectUpdated(project._id, project);
 
   return project;

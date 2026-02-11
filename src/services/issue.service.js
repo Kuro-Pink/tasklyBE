@@ -8,6 +8,7 @@ import {
   emitIssueMovedSprint,
   emitIssueAssigned,
 } from '../utils/socketEmitter.js';
+import { createNotificationService } from './notification.service.js';
 
 /* ===================== CREATE ===================== */
 export const createIssueService = async (data) => {
@@ -205,6 +206,16 @@ export const assignUserService = async (id, assigneeId) => {
   issue.assignee = assigneeId;
   await issue.save();
   await issue.populate('assignee', 'name avatar');
+  /* ===== NOTIFICATION ===== */
+  await createNotificationService({
+    user: assigneeId,
+    title: 'Assigned to issue',
+    message: `You were assigned to ${issue.title}`,
+    type: 'ISSUE_ASSIGN',
+    issue: issue._id,
+  });
+
+  /* ===== SOCKET ===== */
   emitIssueAssigned(issue.project, issue);
 
   return issue;
