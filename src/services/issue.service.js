@@ -1,5 +1,13 @@
 import Issue from '../models/Issue.js';
 import ApiError from '../utils/ApiError.js';
+import {
+  emitIssueCreated,
+  emitIssueUpdated,
+  emitIssueDeleted,
+  emitIssueMovedStatus,
+  emitIssueMovedSprint,
+  emitIssueAssigned,
+} from '../utils/socketEmitter.js';
 
 /* ===================== CREATE ===================== */
 export const createIssueService = async (data) => {
@@ -59,6 +67,8 @@ export const createIssueService = async (data) => {
     parent: parentId || null,
     reporter: reporterId,
   });
+  await issue.populate('assignee', 'name avatar');
+  emitIssueCreated(issue.project, issue);
 
   return issue;
 };
@@ -140,6 +150,8 @@ export const updateIssueService = async (id, updates) => {
   issue.parent = newParent || null;
 
   await issue.save();
+  await issue.populate('assignee', 'name avatar');
+  emitIssueUpdated(issue.project, issue);
 
   return issue;
 };
@@ -153,6 +165,8 @@ export const deleteIssueService = async (id) => {
   await Issue.deleteMany({ parent: id });
 
   await Issue.findByIdAndDelete(id);
+  await issue.populate('assignee', 'name avatar');
+  emitIssueDeleted(issue.project, id);
 
   return true;
 };
@@ -164,6 +178,8 @@ export const moveStatusService = async (id, statusId) => {
 
   issue.status = statusId;
   await issue.save();
+  await issue.populate('assignee', 'name avatar');
+  emitIssueMovedStatus(issue.project, issue);
 
   return issue;
 };
@@ -175,6 +191,8 @@ export const moveSprintService = async (id, sprintId) => {
 
   issue.sprint = sprintId || null;
   await issue.save();
+  await issue.populate('assignee', 'name avatar');
+  emitIssueMovedSprint(issue.project, issue);
 
   return issue;
 };
@@ -186,6 +204,8 @@ export const assignUserService = async (id, assigneeId) => {
 
   issue.assignee = assigneeId;
   await issue.save();
+  await issue.populate('assignee', 'name avatar');
+  emitIssueAssigned(issue.project, issue);
 
   return issue;
 };

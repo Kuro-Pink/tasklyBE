@@ -10,26 +10,12 @@ export const initSocket = (server) => {
     },
   });
 
-  io.on('connection', (socket) => {
-    console.log('🔵 Connected:', socket.id);
-
-    socket.on('joinUser', (userId) => {
-      socket.join(userId);
-    });
-
-    socket.on('joinProject', (projectId) => {
-      socket.join(projectId);
-    });
-
-    socket.on('disconnect', () => {
-      console.log('⚪ Disconnected:', socket.id);
-    });
-  });
-
   return io;
 };
 
 export const getIO = () => {
-  if (!io) throw new Error('Socket not initialized');
+  if (!io) {
+    throw new Error('Socket.io not initialized');
+  }
   return io;
 };

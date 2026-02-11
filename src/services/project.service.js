@@ -1,5 +1,6 @@
 import Project from '../models/Project.js';
 import ApiError from '../utils/ApiError.js';
+import { emitProjectCreated, emitProjectUpdated } from '../utils/socketEmitter.js';
 
 /* ===================== CREATE ===================== */
 export const createProjectService = async (data, userId) => {
@@ -8,6 +9,8 @@ export const createProjectService = async (data, userId) => {
     owner: userId,
     members: [{ user: userId, role: 'Owner' }],
   });
+
+  emitProjectCreated(project._id, project);
 
   return project;
 };
@@ -40,6 +43,8 @@ export const updateProjectService = async (id, updates, userId) => {
   project.description = updates.description ?? project.description;
 
   await project.save();
+  await project.populate('members.user', 'name email avatar');
+  emitProjectUpdated(project._id, project);
   return project;
 };
 
@@ -70,6 +75,8 @@ export const addMemberService = async (projectId, memberId, role, userId) => {
 
   project.members.push({ user: memberId, role: role || 'Member' });
   await project.save();
+  await project.populate('members.user', 'name email avatar');
+  emitProjectUpdated(project._id, project);
 
   return project;
 };
@@ -86,6 +93,8 @@ export const removeMemberService = async (projectId, memberId, userId) => {
   project.members = project.members.filter((m) => m.user.toString() !== memberId);
 
   await project.save();
+  await project.populate('members.user', 'name email avatar');
+  emitProjectUpdated(project._id, project);
   return project;
 };
 
@@ -103,6 +112,8 @@ export const changeRoleService = async (projectId, memberId, role, userId) => {
 
   member.role = role;
   await project.save();
+  await project.populate('members.user', 'name email avatar');
+  emitProjectUpdated(project._id, project);
 
   return project;
 };

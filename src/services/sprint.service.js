@@ -1,6 +1,7 @@
 import Sprint from '../models/Sprint.js';
 import Issue from '../models/Issue.js';
 import ApiError from '../utils/ApiError.js';
+import { emitSprintStarted, emitSprintEnded, emitSprintDeleted } from '../utils/socketEmitter.js';
 
 /* ===================== CREATE ===================== */
 export const createSprintService = async (data) => {
@@ -62,6 +63,8 @@ export const startSprintService = async (id) => {
   sprint.isActive = true;
   await sprint.save();
 
+  emitSprintStarted(sprint.project, sprint);
+
   return sprint;
 };
 
@@ -78,6 +81,8 @@ export const endSprintService = async (id, moveToBacklog = false) => {
     await Issue.updateMany({ sprint: id }, { sprint: null });
   }
 
+  emitSprintEnded(sprint.project, sprint);
+
   return sprint;
 };
 
@@ -90,6 +95,8 @@ export const deleteSprintService = async (id) => {
   await Issue.updateMany({ sprint: id }, { sprint: null });
 
   await Sprint.findByIdAndDelete(id);
+
+  emitSprintDeleted(sprint.project, id);
 
   return true;
 };
