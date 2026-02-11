@@ -16,9 +16,21 @@ export const setupSocket = (io) => {
       console.log(`Socket ${socket.id} joined user ${userId}`);
     });
 
+    /* ===== JOIN ISSUE ROOM (NEW) ===== */
+    socket.on('joinIssue', (issueId) => {
+      if (!issueId) return;
+      socket.join(issueId.toString());
+      console.log(`Socket ${socket.id} joined issue ${issueId}`);
+    });
+
     /* ===== LEAVE PROJECT ===== */
     socket.on('leaveProject', (projectId) => {
       socket.leave(projectId.toString());
+    });
+
+    /* ===== LEAVE ISSUE (NEW) ===== */
+    socket.on('leaveIssue', (issueId) => {
+      socket.leave(issueId.toString());
     });
 
     /* ===== DISCONNECT ===== */

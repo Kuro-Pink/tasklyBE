@@ -12,6 +12,11 @@ export const emitToProject = (projectId, event, data) => {
   io.to(projectId.toString()).emit(event, data);
 };
 
+export const emitToIssue = (issueId, event, data) => {
+  const io = getIO();
+  io.to(issueId.toString()).emit(event, data);
+};
+
 /* ================= ISSUE ================= */
 
 export const emitIssueCreated = (projectId, issue) => {
@@ -26,8 +31,12 @@ export const emitIssueDeleted = (projectId, issueId) => {
   emitToProject(projectId, 'issue:deleted', issueId);
 };
 
-export const emitIssueMoved = (projectId, issue) => {
-  emitToProject(projectId, 'issue:moved', issue);
+export const emitIssueMovedStatus = (issueId, data) => {
+  emitToIssue(issueId, 'issue:statusMoved', data);
+};
+
+export const emitIssueMovedSprint = (issueId, data) => {
+  emitToIssue(issueId, 'issue:sprintMoved', data);
 };
 
 export const emitIssueAssigned = (projectId, issue) => {
@@ -71,6 +80,13 @@ export const emitProjectCreated = (projectId, project) => {
 export const emitProjectUpdated = (projectId, project) => {
   emitToProject(projectId, 'project:updated', project);
 };
+
+/* ================= COMMENT ================= */
+export const emitCommentCreated = (issueId, comment) =>
+  emitToIssue(issueId, 'comment:created', comment);
+
+export const emitCommentDeleted = (issueId, commentId) =>
+  emitToIssue(issueId, 'comment:deleted', commentId);
 
 /* ================= NOTIFICATION ================= */
 
