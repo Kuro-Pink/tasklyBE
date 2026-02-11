@@ -3,6 +3,8 @@ import { protect } from '../middlewares/auth.middleware.js';
 import {
   createSprint,
   getSprints,
+  getSprintDetail,
+  updateSprint,
   startSprint,
   endSprint,
   deleteSprint,
@@ -10,10 +12,15 @@ import {
 
 const router = express.Router();
 
-router.post('/', protect, createSprint);
-router.get('/', protect, getSprints);
-router.patch('/:id/start', protect, startSprint);
-router.patch('/:id/end', protect, endSprint);
-router.delete('/:id', protect, deleteSprint);
+router.use(protect);
+
+router.post('/', createSprint);
+router.get('/', getSprints);
+router.get('/:id', getSprintDetail);
+router.put('/:id', updateSprint);
+router.delete('/:id', deleteSprint);
+
+router.patch('/:id/start', startSprint);
+router.patch('/:id/end', endSprint);
 
 export default router;
