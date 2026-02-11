@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const issueSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
+    title: { type: String, required: true, trim: true },
     description: String,
 
     type: {
@@ -56,5 +56,22 @@ const issueSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+/* ================= INDEX ================= */
+
+// Board (quan trọng nhất)
+issueSchema.index({ project: 1, status: 1 });
+
+// Backlog
+issueSchema.index({ project: 1, sprint: 1 });
+
+// Subtask
+issueSchema.index({ parent: 1 });
+
+// User workload
+issueSchema.index({ assignee: 1 });
+
+// Project issues
+issueSchema.index({ project: 1, createdAt: -1 });
 
 export default mongoose.model('Issue', issueSchema);

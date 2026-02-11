@@ -32,4 +32,16 @@ const notificationSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+/* ================= INDEX ================= */
+
+// Load danh sách notification (quan trọng nhất)
+notificationSchema.index({ user: 1, createdAt: -1 });
+
+// Đếm unread + mark all read
+notificationSchema.index({ user: 1, isRead: 1 });
+
+// Optional – nếu sau này filter theo project/issue
+notificationSchema.index({ project: 1 });
+notificationSchema.index({ issue: 1 });
+
 export default mongoose.model('Notification', notificationSchema);

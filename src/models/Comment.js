@@ -20,4 +20,6 @@ const commentSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+commentSchema.index({ issue: 1, createdAt: 1 });
+
 export default mongoose.model('Comment', commentSchema);

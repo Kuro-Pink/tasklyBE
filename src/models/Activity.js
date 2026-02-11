@@ -20,11 +20,16 @@ const activitySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    content: String,
     field: String,
-    oldValue: String,
-    newValue: String,
+    oldValue: mongoose.Schema.Types.Mixed,
+    newValue: mongoose.Schema.Types.Mixed,
   },
   { timestamps: true },
 );
+
+activitySchema.index({ project: 1, createdAt: -1 });
+activitySchema.index({ issue: 1, createdAt: -1 });
+activitySchema.index({ user: 1, createdAt: -1 });
 
 export default mongoose.model('Activity', activitySchema);
