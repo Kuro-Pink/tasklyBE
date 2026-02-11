@@ -1,6 +1,5 @@
 import catchAsync from '../utils/catchAsync.js';
 import ApiResponse from '../utils/ApiResponse.js';
-import ApiError from '../utils/ApiError.js';
 
 import {
   createUserService,
@@ -16,7 +15,7 @@ import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
 export const register = catchAsync(async (req, res) => {
   const user = await createUserService(req.body);
 
-  res.status(201).json(new ApiResponse(201, 'Register success', user));
+  res.status(201).json(new ApiResponse(201, user, 'Register success'));
 });
 
 /* ================= LOGIN ================= */
@@ -31,34 +30,45 @@ export const login = catchAsync(async (req, res) => {
   await saveRefreshTokenService(user._id, refreshToken);
 
   res.json(
-    new ApiResponse(200, 'Login success', {
-      accessToken,
-      refreshToken,
-      user,
-    }),
+    new ApiResponse(
+      200,
+      {
+        user,
+        accessToken,
+        refreshToken,
+      },
+      'Login success',
+    ),
   );
 });
 
 /* ================= REFRESH ================= */
-export const refresh = catchAsync(async (req, res) => {
-  const { token } = req.body;
-  if (!token) throw new ApiError(400, 'No token');
+export const refreshToken = catchAsync(async (req, res) => {
+  const { refreshToken } = req.body;
 
-  const user = await refreshTokenService(token);
+  const user = await refreshTokenService(refreshToken);
 
-  const newAccess = generateAccessToken(user._id);
+  const newAccessToken = generateAccessToken(user._id);
 
-  res.json(new ApiResponse(200, 'Refreshed', { accessToken: newAccess }));
-});
-
-/* ================= ME ================= */
-export const me = catchAsync(async (req, res) => {
-  res.json(new ApiResponse(200, 'OK', req.user));
+  res.json(
+    new ApiResponse(
+      200,
+      {
+        accessToken: newAccessToken,
+      },
+      'Token refreshed',
+    ),
+  );
 });
 
 /* ================= LOGOUT ================= */
 export const logout = catchAsync(async (req, res) => {
   await logoutService(req.user._id);
 
-  res.json(new ApiResponse(200, 'Logged out'));
+  res.json(new ApiResponse(200, null, 'Logout success'));
+});
+
+/* ================= ME ================= */
+export const me = catchAsync(async (req, res) => {
+  res.json(new ApiResponse(200, 'OK', req.user));
 });

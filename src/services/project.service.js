@@ -1,4 +1,5 @@
 import Project from '../models/Project.js';
+import User from '../models/User.js';
 import ApiError from '../utils/ApiError.js';
 import { requireRole } from '../utils/permission.js';
 import { emitProjectCreated, emitProjectUpdated } from '../utils/socketEmitter.js';
@@ -73,20 +74,32 @@ export const addMemberService = async (projectId, memberId, role, userId) => {
   const project = await Project.findById(projectId);
   if (!project) throw new ApiError(404, 'Project not found');
 
+  const memberUser = await User.findById(memberId);
+  if (!memberUser) throw new ApiError(404, 'User not found');
+
   await requireRole(projectId, userId, ['Owner', 'Admin']);
 
-  const exists = project.members.find((m) => m.user.toString() === memberId);
+  const exists = project.members.find((m) => m.user.toString() === memberId.toString());
   if (exists) throw new ApiError(400, 'Member already exists');
 
   project.members.push({ user: memberId, role: role || 'Member' });
   await project.save();
   await project.populate('members.user', 'name email avatar');
 
+  // ACTIVITY
   await createActivityService({
     project: project._id,
     user: userId,
     action: 'ADD_MEMBER',
-    content: `đã thêm thành viên ${member.name} vào dự án`,
+    content: `đã thêm thành viên ${memberUser.name} vào dự án`,
+  });
+
+  // NOTIFICATION
+  await createNotificationService({
+    user: memberId,
+    project: project._id,
+    type: 'PROJECT_ADDED',
+    content: `Bạn đã được thêm vào dự án "${project.name}"`,
   });
 
   /* ===== SOCKET ===== */
@@ -100,6 +113,9 @@ export const removeMemberService = async (projectId, memberId, userId) => {
   const project = await Project.findById(projectId);
   if (!project) throw new ApiError(404, 'Project not found');
 
+  const memberUser = await User.findById(memberId);
+  if (!memberUser) throw new ApiError(404, 'User not found');
+
   await requireRole(projectId, userId, ['Owner', 'Admin']);
 
   project.members = project.members.filter((m) => m.user.toString() !== memberId);
@@ -107,11 +123,20 @@ export const removeMemberService = async (projectId, memberId, userId) => {
   await project.save();
   await project.populate('members.user', 'name email avatar');
 
+  // ACTIVITY
   await createActivityService({
     project: project._id,
     user: userId,
     action: 'REMOVE_MEMBER',
-    content: `đã xoá thành viên ${member.name} khỏi dự án`,
+    content: `đã xoá thành viên ${memberUser.name} khỏi dự án`,
+  });
+
+  // NOTIFICATION
+  await createNotificationService({
+    user: memberId,
+    project: project._id,
+    type: 'PROJECT_REMOVED',
+    content: `Bạn đã bị xoá khỏi dự án "${project.name}"`,
   });
 
   /* ===== SOCKET ===== */
@@ -124,9 +149,12 @@ export const changeRoleService = async (projectId, memberId, role, userId) => {
   const project = await Project.findById(projectId);
   if (!project) throw new ApiError(404, 'Project not found');
 
+  const memberUser = await User.findById(memberId);
+  if (!memberUser) throw new ApiError(404, 'User not found');
+
   await requireRole(projectId, userId, ['Owner']);
 
-  const member = project.members.find((m) => m.user.toString() === memberId);
+  const member = project.members.find((m) => m.user.toString() === memberId.toString());
   if (!member) throw new ApiError(404, 'Member not found');
 
   member.role = role;
@@ -138,7 +166,7 @@ export const changeRoleService = async (projectId, memberId, role, userId) => {
     project: project._id,
     user: userId,
     action: 'CHANGE_ROLE',
-    content: `đã đổi vai trò của ${member.name} thành ${role}`,
+    content: `đã đổi vai trò của ${memberUser.name} thành ${role}`,
   });
 
   // NOTIFICATION

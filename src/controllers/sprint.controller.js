@@ -37,7 +37,7 @@ export const updateSprint = catchAsync(async (req, res) => {
 
 /* ===================== START ===================== */
 export const startSprint = catchAsync(async (req, res) => {
-  const sprint = await startSprintService(req.params.id);
+  const sprint = await startSprintService(req.params.id, req.user._id);
   res.json(new ApiResponse(200, sprint));
 });
 
@@ -45,7 +45,7 @@ export const startSprint = catchAsync(async (req, res) => {
 export const endSprint = catchAsync(async (req, res) => {
   const { moveToBacklog } = req.body; // true/false
 
-  const sprint = await endSprintService(req.params.id, moveToBacklog);
+  const sprint = await endSprintService(req.params.id, moveToBacklog, req.user._id);
   res.json(new ApiResponse(200, sprint));
 });
 

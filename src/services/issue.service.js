@@ -13,7 +13,7 @@ import { createNotificationService } from './notification.service.js';
 import { createActivityService } from './activity.service.js';
 
 /* ===================== CREATE ===================== */
-export const createIssueService = async (data) => {
+export const createIssueService = async (data, userId) => {
   const {
     title,
     description,
@@ -52,7 +52,7 @@ export const createIssueService = async (data) => {
       throw new ApiError(400, 'Cannot assign subtask as parent');
     }
 
-    if (parentIssue.project.toString() !== projectId) {
+    if (parentIssue.project.toString() !== projectId.toString()) {
       throw new ApiError(400, 'Parent must be in same project');
     }
 
@@ -119,9 +119,11 @@ export const getIssueDetailService = async (id) => {
 };
 
 /* ===================== UPDATE ===================== */
-export const updateIssueService = async (id, updates) => {
+export const updateIssueService = async (id, updates, userId) => {
   const issue = await Issue.findById(id);
   if (!issue) throw new ApiError(404, 'Issue not found');
+
+  await requireRole(issue.project, userId, ['Owner', 'Admin', 'Member']);
 
   const newType = updates.type || issue.type;
   const newProject = updates.projectId || issue.project.toString();
@@ -171,11 +173,11 @@ export const updateIssueService = async (id, updates) => {
 };
 
 /* ===================== DELETE ===================== */
-export const deleteIssueService = async (id) => {
+export const deleteIssueService = async (id, userId) => {
   const issue = await Issue.findById(id);
   if (!issue) throw new ApiError(404, 'Issue not found');
 
-  await requireRole(projectId, userId, ['Owner', 'Admin']);
+  await requireRole(issue.project, userId, ['Owner', 'Admin']);
 
   // xoá children
   await Issue.deleteMany({ parent: id });
@@ -196,8 +198,10 @@ export const deleteIssueService = async (id) => {
 };
 
 /* ===================== MOVE STATUS ===================== */
-export const moveStatusService = async (id, statusId) => {
+export const moveStatusService = async (id, statusId, userId) => {
   const issue = await Issue.findById(id);
+  const status = await Status.findById(statusId);
+
   if (!issue) throw new ApiError(404, 'Issue not found');
 
   await requireRole(projectId, userId, ['Owner', 'Admin']);
@@ -211,7 +215,7 @@ export const moveStatusService = async (id, statusId) => {
     issue: issue._id,
     user: userId,
     action: 'MOVE_STATUS',
-    content: `đã chuyển trạng thái "${issue.title}" sang ${newStatus.name}`,
+    content: `đã chuyển trạng thái "${issue.title}" sang ${status.name}`,
   });
 
   emitIssueMovedStatus(issue.project, issue);
@@ -220,8 +224,10 @@ export const moveStatusService = async (id, statusId) => {
 };
 
 /* ===================== MOVE SPRINT ===================== */
-export const moveSprintService = async (id, sprintId) => {
+export const moveSprintService = async (id, sprintId, userId) => {
   const issue = await Issue.findById(id);
+  const sprint = sprintId ? await Sprint.findById(sprintId) : null;
+
   if (!issue) throw new ApiError(404, 'Issue not found');
 
   issue.sprint = sprintId || null;
@@ -242,11 +248,11 @@ export const moveSprintService = async (id, sprintId) => {
 };
 
 /* ===================== ASSIGN USER ===================== */
-export const assignUserService = async (id, assigneeId) => {
+export const assignUserService = async (id, assigneeId, userId) => {
   const issue = await Issue.findById(id);
   if (!issue) throw new ApiError(404, 'Issue not found');
 
-  await requireRole(projectId, userId, ['Owner', 'Admin']);
+  await requireRole(issue.project, userId, ['Owner', 'Admin']);
 
   issue.assignee = assigneeId;
   await issue.save();
@@ -277,9 +283,11 @@ export const assignUserService = async (id, assigneeId) => {
 };
 
 /* ===================== CHANGE PARENT ===================== */
-export const changeParentService = async (id, parentId) => {
+export const changeParentService = async (id, parentId, userId) => {
   const issue = await Issue.findById(id);
   if (!issue) throw new ApiError(404, 'Issue not found');
+
+  await requireRole(issue.project, userId, ['Owner', 'Admin', 'Member']);
 
   if (issue.type === 'Epic' && parentId) {
     throw new ApiError(400, 'Epic cannot have parent');

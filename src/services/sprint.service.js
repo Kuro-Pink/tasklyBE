@@ -1,5 +1,6 @@
 import Sprint from '../models/Sprint.js';
 import Issue from '../models/Issue.js';
+import { requireRole } from '../utils/permission.js';
 import ApiError from '../utils/ApiError.js';
 import { emitSprintStarted, emitSprintEnded, emitSprintDeleted } from '../utils/socketEmitter.js';
 import { createActivityService } from './activity.service.js';
@@ -47,9 +48,11 @@ export const updateSprintService = async (id, updates) => {
 };
 
 /* ===================== START ===================== */
-export const startSprintService = async (id) => {
+export const startSprintService = async (id, userId) => {
   const sprint = await Sprint.findById(id);
   if (!sprint) throw new ApiError(404, 'Sprint not found');
+
+  await requireRole(sprint.project, userId, ['Owner', 'Admin']);
 
   // RULE: mỗi project chỉ có 1 sprint active
   const activeSprint = await Sprint.findOne({
@@ -77,14 +80,15 @@ export const startSprintService = async (id) => {
 };
 
 /* ===================== END ===================== */
-export const endSprintService = async (id, moveToBacklog = false) => {
+export const endSprintService = async (id, moveToBacklog = false, userId) => {
   const sprint = await Sprint.findById(id);
   if (!sprint) throw new ApiError(404, 'Sprint not found');
+
+  await requireRole(sprint.project, userId, ['Owner', 'Admin']);
 
   sprint.isActive = false;
   await sprint.save();
 
-  // OPTIONAL: move issue về backlog
   if (moveToBacklog) {
     await Issue.updateMany({ sprint: id }, { sprint: null });
   }

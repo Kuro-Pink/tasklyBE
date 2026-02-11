@@ -39,42 +39,42 @@ export const getIssueDetail = catchAsync(async (req, res) => {
 
 /* ===================== UPDATE ===================== */
 export const updateIssue = catchAsync(async (req, res) => {
-  const issue = await updateIssueService(req.params.id, req.body);
+  const issue = await updateIssueService(req.params.id, req.body, req.user._id);
 
   res.json(new ApiResponse(200, issue, 'Issue updated'));
 });
 
 /* ===================== DELETE (CASCADE) ===================== */
 export const deleteIssue = catchAsync(async (req, res) => {
-  await deleteIssueService(req.params.id);
+  await deleteIssueService(req.params.id, req.user._id);
 
   res.json(new ApiResponse(200, null, 'Issue deleted with children'));
 });
 
 /* ===================== MOVE STATUS ===================== */
 export const moveStatus = catchAsync(async (req, res) => {
-  const issue = await moveStatusService(req.params.id, req.body.statusId);
+  const issue = await moveStatusService(req.params.id, req.body.statusId, req.user._id);
 
   res.json(new ApiResponse(200, issue, 'Status moved'));
 });
 
 /* ===================== MOVE SPRINT ===================== */
 export const moveSprint = catchAsync(async (req, res) => {
-  const issue = await moveSprintService(req.params.id, req.body.sprintId);
+  const issue = await moveSprintService(req.params.id, req.body.sprintId, req.user._id);
 
   res.json(new ApiResponse(200, issue, 'Sprint moved'));
 });
 
 /* ===================== ASSIGN ===================== */
 export const assignUser = catchAsync(async (req, res) => {
-  const issue = await assignUserService(req.params.id, req.body.assigneeId);
+  const issue = await assignUserService(req.params.id, req.body.assigneeId, req.user._id);
 
   res.json(new ApiResponse(200, issue, 'User assigned'));
 });
 
 /* ===================== CHANGE PARENT ===================== */
 export const changeParent = catchAsync(async (req, res) => {
-  const issue = await changeParentService(req.params.id, req.body.parentId);
+  const issue = await changeParentService(req.params.id, req.body.parentId, req.user._id);
 
   res.json(new ApiResponse(200, issue, 'Parent changed'));
 });
