@@ -1,5 +1,6 @@
 import Project from '../models/Project.js';
 import ApiError from '../utils/ApiError.js';
+import { requireRole } from '../utils/permission.js';
 import { emitProjectCreated, emitProjectUpdated } from '../utils/socketEmitter.js';
 import { createNotificationService } from './notification.service.js';
 import { createActivityService } from './activity.service.js';
@@ -37,9 +38,7 @@ export const updateProjectService = async (id, updates, userId) => {
   if (!project) throw new ApiError(404, 'Project not found');
 
   // chỉ owner mới được sửa
-  if (project.owner.toString() !== userId.toString()) {
-    throw new ApiError(403, 'Only owner can update project');
-  }
+  await requireRole(id, userId, ['Owner', 'Admin']);
 
   project.name = updates.name ?? project.name;
   project.description = updates.description ?? project.description;
@@ -63,9 +62,7 @@ export const deleteProjectService = async (id, userId) => {
   const project = await Project.findById(id);
   if (!project) throw new ApiError(404, 'Project not found');
 
-  if (project.owner.toString() !== userId.toString()) {
-    throw new ApiError(403, 'Only owner can delete project');
-  }
+  await requireRole(id, userId, ['Owner']);
 
   await Project.findByIdAndDelete(id);
   return true;
@@ -76,9 +73,7 @@ export const addMemberService = async (projectId, memberId, role, userId) => {
   const project = await Project.findById(projectId);
   if (!project) throw new ApiError(404, 'Project not found');
 
-  if (project.owner.toString() !== userId.toString()) {
-    throw new ApiError(403, 'Only owner can add member');
-  }
+  await requireRole(projectId, userId, ['Owner', 'Admin']);
 
   const exists = project.members.find((m) => m.user.toString() === memberId);
   if (exists) throw new ApiError(400, 'Member already exists');
@@ -105,9 +100,7 @@ export const removeMemberService = async (projectId, memberId, userId) => {
   const project = await Project.findById(projectId);
   if (!project) throw new ApiError(404, 'Project not found');
 
-  if (project.owner.toString() !== userId.toString()) {
-    throw new ApiError(403, 'Only owner can remove member');
-  }
+  await requireRole(projectId, userId, ['Owner', 'Admin']);
 
   project.members = project.members.filter((m) => m.user.toString() !== memberId);
 
@@ -131,9 +124,7 @@ export const changeRoleService = async (projectId, memberId, role, userId) => {
   const project = await Project.findById(projectId);
   if (!project) throw new ApiError(404, 'Project not found');
 
-  if (project.owner.toString() !== userId.toString()) {
-    throw new ApiError(403, 'Only owner can change role');
-  }
+  await requireRole(projectId, userId, ['Owner']);
 
   const member = project.members.find((m) => m.user.toString() === memberId);
   if (!member) throw new ApiError(404, 'Member not found');

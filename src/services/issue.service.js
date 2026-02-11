@@ -1,5 +1,6 @@
 import Issue from '../models/Issue.js';
 import ApiError from '../utils/ApiError.js';
+import { requireRole } from '../utils/permission.js';
 import {
   emitIssueCreated,
   emitIssueUpdated,
@@ -28,6 +29,8 @@ export const createIssueService = async (data) => {
   if (!title || !type || !projectId || !statusId) {
     throw new ApiError(400, 'Missing required fields');
   }
+
+  await requireRole(projectId, userId, ['Owner', 'Admin', 'Member']);
 
   let parentIssue = null;
 
@@ -172,6 +175,8 @@ export const deleteIssueService = async (id) => {
   const issue = await Issue.findById(id);
   if (!issue) throw new ApiError(404, 'Issue not found');
 
+  await requireRole(projectId, userId, ['Owner', 'Admin']);
+
   // xoá children
   await Issue.deleteMany({ parent: id });
 
@@ -194,6 +199,8 @@ export const deleteIssueService = async (id) => {
 export const moveStatusService = async (id, statusId) => {
   const issue = await Issue.findById(id);
   if (!issue) throw new ApiError(404, 'Issue not found');
+
+  await requireRole(projectId, userId, ['Owner', 'Admin']);
 
   issue.status = statusId;
   await issue.save();
@@ -238,6 +245,8 @@ export const moveSprintService = async (id, sprintId) => {
 export const assignUserService = async (id, assigneeId) => {
   const issue = await Issue.findById(id);
   if (!issue) throw new ApiError(404, 'Issue not found');
+
+  await requireRole(projectId, userId, ['Owner', 'Admin']);
 
   issue.assignee = assigneeId;
   await issue.save();

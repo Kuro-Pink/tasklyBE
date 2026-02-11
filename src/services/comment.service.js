@@ -1,5 +1,6 @@
 import Comment from '../models/Comment.js';
 import ApiError from '../utils/ApiError.js';
+import { requireRole } from '../utils/permission.js';
 import { emitCommentCreated, emitCommentDeleted } from '../utils/socketEmitter.js';
 import { createNotificationService } from './notification.service.js';
 import { createActivityService } from './activity.service.js';
@@ -7,6 +8,8 @@ import { createActivityService } from './activity.service.js';
 /* ===================== CREATE ===================== */
 export const createCommentService = async (issueId, content, userId) => {
   if (!content) throw new ApiError(400, 'Content required');
+
+  await requireRole(projectId, userId, ['Owner', 'Admin', 'Member']);
 
   const comment = await Comment.create({
     content,
@@ -40,6 +43,8 @@ export const getCommentsByIssueService = async (issueId) => {
 export const deleteCommentService = async (commentId, userId) => {
   const comment = await Comment.findById(commentId);
   if (!comment) throw new ApiError(404, 'Comment not found');
+
+  await requireRole(projectId, userId, ['Owner', 'Admin']);
 
   if (comment.author.toString() !== userId.toString()) {
     throw new ApiError(403, 'Not allowed');
