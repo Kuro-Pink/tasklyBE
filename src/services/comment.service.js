@@ -1,6 +1,8 @@
 import Comment from '../models/Comment.js';
 import ApiError from '../utils/ApiError.js';
 import { emitCommentCreated, emitCommentDeleted } from '../utils/socketEmitter.js';
+import { createNotificationService } from './notification.service.js';
+import { createActivityService } from './activity.service.js';
 
 /* ===================== CREATE ===================== */
 export const createCommentService = async (issueId, content, userId) => {
@@ -13,6 +15,14 @@ export const createCommentService = async (issueId, content, userId) => {
   });
 
   await comment.populate('author', 'name email avatar');
+
+  await createActivityService({
+    project: comment.project,
+    issue: comment.issue,
+    user: userId,
+    action: 'COMMENT',
+    content: `đã bình luận vào công việc`,
+  });
 
   emitCommentCreated(issueId, comment);
 
@@ -36,6 +46,14 @@ export const deleteCommentService = async (commentId, userId) => {
   }
 
   await Comment.findByIdAndDelete(commentId);
+
+  await createActivityService({
+    project,
+    issue,
+    user: userId,
+    action: 'DELETE_COMMENT',
+    content: `đã xóa bình luận`,
+  });
 
   emitCommentDeleted(comment.issue, commentId);
 

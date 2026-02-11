@@ -9,6 +9,7 @@ import {
   emitIssueAssigned,
 } from '../utils/socketEmitter.js';
 import { createNotificationService } from './notification.service.js';
+import { createActivityService } from './activity.service.js';
 
 /* ===================== CREATE ===================== */
 export const createIssueService = async (data) => {
@@ -69,6 +70,15 @@ export const createIssueService = async (data) => {
     reporter: reporterId,
   });
   await issue.populate('assignee', 'name avatar');
+
+  await createActivityService({
+    project: issue.project,
+    issue: issue._id,
+    user: userId,
+    action: 'CREATE_ISSUE',
+    content: `đã tạo công việc "${issue.title}"`,
+  });
+
   emitIssueCreated(issue.project, issue);
 
   return issue;
@@ -167,6 +177,14 @@ export const deleteIssueService = async (id) => {
 
   await Issue.findByIdAndDelete(id);
   await issue.populate('assignee', 'name avatar');
+
+  await createActivityService({
+    project: issue.project,
+    user: userId,
+    action: 'DELETE_ISSUE',
+    content: `đã xoá công việc "${issue.title}"`,
+  });
+
   emitIssueDeleted(issue.project, id);
 
   return true;
@@ -180,6 +198,15 @@ export const moveStatusService = async (id, statusId) => {
   issue.status = statusId;
   await issue.save();
   await issue.populate('assignee', 'name avatar');
+
+  await createActivityService({
+    project: issue.project,
+    issue: issue._id,
+    user: userId,
+    action: 'MOVE_STATUS',
+    content: `đã chuyển trạng thái "${issue.title}" sang ${newStatus.name}`,
+  });
+
   emitIssueMovedStatus(issue.project, issue);
 
   return issue;
@@ -193,6 +220,15 @@ export const moveSprintService = async (id, sprintId) => {
   issue.sprint = sprintId || null;
   await issue.save();
   await issue.populate('assignee', 'name avatar');
+
+  await createActivityService({
+    project: issue.project,
+    issue: issue._id,
+    user: userId,
+    action: 'MOVE_SPRINT',
+    content: `đã chuyển công việc "${issue.title}" sang sprint ${sprint.name}`,
+  });
+
   emitIssueMovedSprint(issue.project, issue);
 
   return issue;
@@ -206,13 +242,23 @@ export const assignUserService = async (id, assigneeId) => {
   issue.assignee = assigneeId;
   await issue.save();
   await issue.populate('assignee', 'name avatar');
-  /* ===== NOTIFICATION ===== */
+
+  // ACTIVITY
+  await createActivityService({
+    project: issue.project,
+    issue: issue._id,
+    user: userId,
+    action: 'ASSIGN_ISSUE',
+    content: `đã giao công việc "${issue.title}" cho ${issue.assignee.name}`,
+  });
+
+  // NOTIFICATION
   await createNotificationService({
     user: assigneeId,
-    title: 'Assigned to issue',
-    message: `You were assigned to ${issue.title}`,
-    type: 'ISSUE_ASSIGN',
+    project: issue.project,
     issue: issue._id,
+    type: 'ASSIGN',
+    content: `Bạn được giao công việc "${issue.title}"`,
   });
 
   /* ===== SOCKET ===== */

@@ -2,6 +2,7 @@ import Sprint from '../models/Sprint.js';
 import Issue from '../models/Issue.js';
 import ApiError from '../utils/ApiError.js';
 import { emitSprintStarted, emitSprintEnded, emitSprintDeleted } from '../utils/socketEmitter.js';
+import { createActivityService } from './activity.service.js';
 
 /* ===================== CREATE ===================== */
 export const createSprintService = async (data) => {
@@ -63,6 +64,13 @@ export const startSprintService = async (id) => {
   sprint.isActive = true;
   await sprint.save();
 
+  await createActivityService({
+    project: sprint.project,
+    user: userId,
+    action: 'SPRINT_START',
+    content: `đã bắt đầu sprint "${sprint.name}"`,
+  });
+
   emitSprintStarted(sprint.project, sprint);
 
   return sprint;
@@ -80,6 +88,13 @@ export const endSprintService = async (id, moveToBacklog = false) => {
   if (moveToBacklog) {
     await Issue.updateMany({ sprint: id }, { sprint: null });
   }
+
+  await createActivityService({
+    project: sprint.project,
+    user: userId,
+    action: 'SPRINT_END',
+    content: `đã kết thúc sprint "${sprint.name}"`,
+  });
 
   emitSprintEnded(sprint.project, sprint);
 

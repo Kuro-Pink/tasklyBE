@@ -2,6 +2,7 @@ import Project from '../models/Project.js';
 import ApiError from '../utils/ApiError.js';
 import { emitProjectCreated, emitProjectUpdated } from '../utils/socketEmitter.js';
 import { createNotificationService } from './notification.service.js';
+import { createActivityService } from './activity.service.js';
 
 /* ===================== CREATE ===================== */
 export const createProjectService = async (data, userId) => {
@@ -45,6 +46,14 @@ export const updateProjectService = async (id, updates, userId) => {
 
   await project.save();
   await project.populate('members.user', 'name email avatar');
+
+  await createActivityService({
+    project: project._id,
+    user: userId,
+    action: 'UPDATE_PROJECT',
+    content: `đã cập nhật thông tin dự án`,
+  });
+
   emitProjectUpdated(project._id, project);
   return project;
 };
@@ -78,13 +87,11 @@ export const addMemberService = async (projectId, memberId, role, userId) => {
   await project.save();
   await project.populate('members.user', 'name email avatar');
 
-  /* ===== NOTIFICATION ===== */
-  await createNotificationService({
-    user: memberId,
-    title: 'Added to project',
-    message: `You were added to ${project.name}`,
-    type: 'PROJECT_INVITE',
+  await createActivityService({
     project: project._id,
+    user: userId,
+    action: 'ADD_MEMBER',
+    content: `đã thêm thành viên ${member.name} vào dự án`,
   });
 
   /* ===== SOCKET ===== */
@@ -107,13 +114,11 @@ export const removeMemberService = async (projectId, memberId, userId) => {
   await project.save();
   await project.populate('members.user', 'name email avatar');
 
-  /* ===== NOTIFICATION ===== */
-  await createNotificationService({
-    user: memberId,
-    title: 'Removed from project',
-    message: `You were removed from ${project.name}`,
-    type: 'PROJECT_REMOVE',
+  await createActivityService({
     project: project._id,
+    user: userId,
+    action: 'REMOVE_MEMBER',
+    content: `đã xoá thành viên ${member.name} khỏi dự án`,
   });
 
   /* ===== SOCKET ===== */
@@ -137,13 +142,20 @@ export const changeRoleService = async (projectId, memberId, role, userId) => {
   await project.save();
   await project.populate('members.user', 'name email avatar');
 
-  /* ===== NOTIFICATION ===== */
+  // ACTIVITY
+  await createActivityService({
+    project: project._id,
+    user: userId,
+    action: 'CHANGE_ROLE',
+    content: `đã đổi vai trò của ${member.name} thành ${role}`,
+  });
+
+  // NOTIFICATION
   await createNotificationService({
     user: memberId,
-    title: 'Role changed',
-    message: `Your role in ${project.name} is now ${role}`,
-    type: 'PROJECT_ROLE',
     project: project._id,
+    type: 'ROLE_CHANGED',
+    content: `Vai trò của bạn trong dự án đã được thay đổi thành ${role}`,
   });
 
   /* ===== SOCKET ===== */
