@@ -1,6 +1,7 @@
 import Comment from '../models/Comment.js';
 import Issue from '../models/Issue.js';
 import User from '../models/User.js';
+import { extractMentions } from '../utils/mention.js';
 import ApiError from '../utils/ApiError.js';
 import { requireRole } from '../utils/permission.js';
 import { emitCommentCreated, emitCommentDeleted } from '../utils/socketEmitter.js';
@@ -31,6 +32,25 @@ export const createCommentService = async (issueId, content, userId) => {
     action: 'COMMENT',
     content: `đã bình luận vào công việc`,
   });
+
+  /* ===== MENTION USER ===== */
+  const mentions = extractMentions(content);
+
+  for (const username of mentions) {
+    const user = await User.findOne({ username });
+    if (!user) continue;
+
+    // không notify chính mình
+    if (user._id.toString() === userId.toString()) continue;
+
+    await createNotificationService({
+      user: user._id,
+      type: 'MENTION',
+      content: `Bạn được nhắc trong 1 bình luận`,
+      project: issue.project,
+      issue: issue._id,
+    });
+  }
 
   emitCommentCreated(issueId, comment);
 
