@@ -93,3 +93,9 @@ export const emitCommentDeleted = (issueId, commentId) =>
 export const emitNotification = (userId, notification) => {
   emitToUser(userId, 'notification:new', notification);
 };
+
+/* ================= ACTIVITY ================= */
+
+export const emitActivityCreated = (projectId, activity) => {
+  emitToProject(projectId, 'activity:created', activity);
+};

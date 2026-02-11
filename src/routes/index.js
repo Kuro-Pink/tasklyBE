@@ -4,6 +4,9 @@ import projectRoutes from './project.route.js';
 import statusRoutes from './status.route.js';
 import sprintRoutes from './sprint.route.js';
 import issueRoutes from './issue.route.js';
+import commentRoutes from './comment.route.js';
+import notificationRoutes from './notification.route.js';
+import activityRoutes from './activity.routes.js';
 
 const router = express.Router();
 
@@ -12,6 +15,9 @@ router.use('/projects', projectRoutes);
 router.use('/statuses', statusRoutes);
 router.use('/sprints', sprintRoutes);
 router.use('/issues', issueRoutes);
+router.use('/comments', commentRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/activities', activityRoutes);
 
 // Health check
 router.get('/health', (req, res) => {
