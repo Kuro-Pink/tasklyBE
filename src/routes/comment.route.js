@@ -1,7 +1,7 @@
 import express from 'express';
 import { protect } from '../middlewares/auth.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
-import { createCommentSchema } from '../validators/project.validator.js';
+import { createCommentSchema } from '../validators/comment.validator.js';
 import { createComment, getComments, deleteComment } from '../controllers/comment.controller.js';
 
 const router = express.Router();

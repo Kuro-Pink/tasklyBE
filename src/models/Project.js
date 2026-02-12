@@ -35,7 +35,13 @@ const projectSchema = new mongoose.Schema(
 
 /* ================= INDEX ================= */
 
-sprintSchema.index({ project: 1, isActive: 1 });
-sprintSchema.index({ project: 1, startDate: 1 });
+// Lấy project theo owner (My Projects)
+projectSchema.index({ owner: 1, createdAt: -1 });
+
+// Lấy project theo member
+projectSchema.index({ 'members.user': 1 });
+
+// Nếu muốn sort theo thời gian tạo
+projectSchema.index({ createdAt: -1 });
 
 export default mongoose.model('Project', projectSchema);

@@ -9,7 +9,7 @@ import {
 
 import { protect } from '../middlewares/auth.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
-import { createStatusSchema } from '../validators/project.validator.js';
+import { createStatusSchema } from '../validators/status.validator.js';
 
 const router = express.Router();
 
