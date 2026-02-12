@@ -8,12 +8,14 @@ import {
 } from '../controllers/status.controller.js';
 
 import { protect } from '../middlewares/auth.middleware.js';
+import { validate } from '../middlewares/validate.middleware.js';
+import { createStatusSchema } from '../validators/project.validator.js';
 
 const router = express.Router();
 
 router.use(protect);
 
-router.post('/', createStatus);
+router.post('/', validate(createStatusSchema), createStatus);
 router.get('/', getStatuses);
 router.put('/:id', updateStatus);
 router.delete('/:id', deleteStatus);

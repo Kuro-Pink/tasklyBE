@@ -1,5 +1,7 @@
 import express from 'express';
 import { protect } from '../middlewares/auth.middleware.js';
+import { validate } from '../middlewares/validate.middleware.js';
+import { createProjectSchema, updateProjectSchema } from '../validators/project.validator.js';
 import {
   createProject,
   getProjects,
@@ -15,10 +17,10 @@ const router = express.Router();
 
 router.use(protect);
 
-router.post('/', createProject);
+router.post('/', validate(createProjectSchema), createProject);
 router.get('/', getProjects);
 router.get('/:id', getProjectDetail);
-router.put('/:id', updateProject);
+router.put('/:id', validate(updateProjectSchema), updateProject);
 router.delete('/:id', deleteProject);
 
 router.post('/:id/members', addMember);
