@@ -58,6 +58,8 @@ const apiLimiter = rateLimit({
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
+} else {
+  app.use(morgan('combined'));
 }
 
 app.use('/api/v1', apiLimiter);
