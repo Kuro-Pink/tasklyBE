@@ -4,7 +4,8 @@ import { validate } from '../middlewares/validate.middleware.js';
 import { createIssueSchema } from '../validators/issue.validator.js';
 import {
   createIssue,
-  getIssuesByProject,
+  getIssues,
+  countIssues,
   getIssueDetail,
   updateIssue,
   deleteIssue,
@@ -19,7 +20,8 @@ const router = express.Router();
 router.use(protect);
 
 router.post('/', validate(createIssueSchema), createIssue);
-router.get('/', getIssuesByProject);
+router.get('/', getIssues);
+router.get('/count', countIssues);
 router.get('/:id', getIssueDetail);
 router.put('/:id', updateIssue);
 router.delete('/:id', deleteIssue);

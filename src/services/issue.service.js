@@ -87,16 +87,48 @@ export const createIssueService = async (data, userId) => {
   return issue;
 };
 
-/* ===================== GET BY PROJECT ===================== */
-export const getIssuesByProjectService = async (projectId) => {
-  if (!projectId) throw new ApiError(400, 'ProjectId is required');
+/* ===================== GET ISSUE ===================== */
+export const getIssuesService = async (query) => {
+  const {
+    project,
+    status,
+    assignee,
+    priority,
+    search,
+    sort = '-createdAt',
+    page = 1,
+    limit = 20,
+  } = query;
 
-  const issues = await Issue.find({ project: projectId })
-    .populate('status')
-    .populate('assignee')
-    .populate('parent');
+  const filter = {};
+
+  if (project) filter.project = project;
+  if (status) filter.status = status;
+  if (assignee) filter.assignee = assignee;
+  if (priority) filter.priority = priority;
+
+  if (search) {
+    filter.title = { $regex: search, $options: 'i' };
+  }
+
+  const skip = (page - 1) * limit;
+
+  const issues = await Issue.find(filter)
+    .populate('assignee reporter status')
+    .sort(sort)
+    .skip(skip)
+    .limit(Number(limit));
 
   return issues;
+};
+
+/* ===================== COUNT ISSUE ===================== */
+export const countIssuesService = async (query) => {
+  const filter = {};
+
+  if (query.project) filter.project = query.project;
+
+  return Issue.countDocuments(filter);
 };
 
 /* ===================== GET DETAIL ===================== */

@@ -3,7 +3,8 @@ import ApiResponse from '../utils/ApiResponse.js';
 
 import {
   createIssueService,
-  getIssuesByProjectService,
+  getIssuesService,
+  countIssuesService,
   getIssueDetailService,
   updateIssueService,
   deleteIssueService,
@@ -24,10 +25,18 @@ export const createIssue = catchAsync(async (req, res) => {
 });
 
 /* ===================== GET ===================== */
-export const getIssuesByProject = catchAsync(async (req, res) => {
-  const issues = await getIssuesByProjectService(req.query.projectId);
+export const getIssues = catchAsync(async (req, res) => {
+  const result = await getIssuesService(req.query);
 
-  res.json(new ApiResponse(200, issues));
+  res.json(new ApiResponse(200, result));
+});
+
+/* ===================== COUNT ===================== */
+
+export const countIssues = catchAsync(async (req, res) => {
+  const count = await countIssuesService(req.query);
+
+  res.json(new ApiResponse(200, { count }));
 });
 
 /* ===================== GET DETAIL ===================== */
