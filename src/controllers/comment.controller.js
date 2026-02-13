@@ -26,5 +26,5 @@ export const getComments = catchAsync(async (req, res) => {
 export const deleteComment = catchAsync(async (req, res) => {
   await deleteCommentService(req.params.id, req.user._id);
 
-  res.json(new ApiResponse(200, 'Deleted'));
+  res.json(new ApiResponse(200, null, 'Deleted'));
 });

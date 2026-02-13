@@ -13,12 +13,10 @@ export const createUserService = async (data) => {
   const exist = await User.findOne({ email });
   if (exist) throw new ApiError(400, 'Email already exists');
 
-  const hashed = await bcrypt.hash(password, 10);
-
   const user = await User.create({
     name,
     email,
-    password: hashed,
+    password,
   });
 
   // KHÔNG TRẢ PASSWORD
@@ -34,7 +32,7 @@ export const loginUserService = async (email, password) => {
     throw new ApiError(400, 'Email & password required');
   }
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }).select('+password');
   if (!user) throw new ApiError(404, 'User not found');
 
   const match = await bcrypt.compare(password, user.password);
