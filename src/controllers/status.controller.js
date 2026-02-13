@@ -11,7 +11,7 @@ import {
 
 /* ===================== CREATE ===================== */
 export const createStatus = catchAsync(async (req, res) => {
-  const status = await createStatusService(req.body);
+  const status = await createStatusService(req.body, req.user._id);
 
   res.json(new ApiResponse(201, status));
 });
@@ -31,7 +31,7 @@ export const getStatuses = catchAsync(async (req, res) => {
 
 /* ===================== UPDATE ===================== */
 export const updateStatus = catchAsync(async (req, res) => {
-  const status = await updateStatusService(req.params.id, req.body);
+  const status = await updateStatusService(req.params.id, req.body, req.user._id);
 
   res.json(new ApiResponse(200, status));
 });
@@ -44,11 +44,7 @@ export const reorderStatus = catchAsync(async (req, res) => {
     return res.json(new ApiResponse(400, null, 'Invalid payload'));
   }
 
-  await reorderStatusService(
-    projectId,
-    orders,
-    req.user._id, // 🔥 QUAN TRỌNG
-  );
+  await reorderStatusService(projectId, orders, req.user._id);
 
   res.json(new ApiResponse(200, null, 'Reordered'));
 });
@@ -57,7 +53,7 @@ export const reorderStatus = catchAsync(async (req, res) => {
 export const deleteStatus = catchAsync(async (req, res) => {
   const { moveToStatusId } = req.body;
 
-  await deleteStatusService(req.params.id, moveToStatusId);
+  await deleteStatusService(req.params.id, moveToStatusId, req.user._id);
 
   res.json(new ApiResponse(200, null, 'Deleted'));
 });

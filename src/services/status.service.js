@@ -90,9 +90,12 @@ export const reorderStatusService = async (projectId, statusOrders, userId) => {
 };
 
 /* ===================== DELETE ===================== */
-export const deleteStatusService = async (id, moveToStatusId = null) => {
+export const deleteStatusService = async (id, moveToStatusId = null, userId) => {
   const status = await Status.findById(id);
   if (!status) throw new ApiError(404, 'Status not found');
+
+  /* ===== PERMISSION ===== */
+  await requireRole(projectId, userId, ['Owner', 'Admin']);
 
   const issues = await Issue.countDocuments({ status: id });
 
