@@ -11,8 +11,15 @@ const notificationSchema = new mongoose.Schema(
     message: String,
     type: {
       type: String,
-      enum: ['ISSUE_ASSIGN', 'COMMENT', 'PROJECT_INVITE'],
-      default: 'COMMENT',
+      enum: [
+        'ISSUE_ASSIGN',
+        'ROLE_CHANGED',
+        'PROJECT_ADDED',
+        'PROJECT_REMOVED',
+        'MENTION',
+        'ASSIGN',
+      ],
+      default: 'ISSUE_ASSIGN',
     },
     isRead: {
       type: Boolean,
