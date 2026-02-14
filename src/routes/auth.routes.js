@@ -10,6 +10,7 @@ import {
 import { protect } from '../middlewares/auth.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
 import { registerSchema, loginSchema } from '../validators/auth.validator.js';
+import { upload } from '../middlewares/upload.middleware.js';
 
 const router = express.Router();
 
@@ -18,6 +19,6 @@ router.post('/login', validate(loginSchema), login);
 router.post('/refresh', refreshToken);
 router.post('/logout', protect, logout);
 router.get('/me', protect, me);
-router.patch('/me', protect, updateMe);
+router.patch('/me', protect, upload.single('avatar'), updateMe);
 
 export default router;

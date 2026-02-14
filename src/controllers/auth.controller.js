@@ -66,7 +66,7 @@ export const refreshToken = catchAsync(async (req, res) => {
 export const updateMe = catchAsync(async (req, res) => {
   const userId = req.user._id;
 
-  const user = await updateUserInfoService(userId, req.body);
+  const user = await updateUserInfoService(userId, req.body, req.file);
 
   res.json(new ApiResponse(200, user, 'Update profile success'));
 });

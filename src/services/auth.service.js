@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import ApiError from '../utils/ApiError.js';
 import bcrypt from 'bcryptjs';
+import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryUpload.js';
 
 /* ================= REGISTER ================= */
 export const createUserService = async (data) => {
@@ -70,26 +71,30 @@ export const refreshTokenService = async (token) => {
 };
 
 /* ================= UPDATE USER INFO ================= */
-export const updateUserInfoService = async (userId, data) => {
-  const allowedFields = ['name', 'avatar', 'phone'];
+export const updateUserInfoService = async (userId, data, file) => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error('User not found');
 
-  const updateData = {};
-
-  allowedFields.forEach((field) => {
-    if (data[field] !== undefined) {
-      updateData[field] = data[field];
+  // ===== AVATAR =====
+  if (file) {
+    // xoá avatar cũ
+    if (user.avatarPublicId) {
+      await deleteFromCloudinary(user.avatarPublicId);
     }
-  });
 
-  if (Object.keys(updateData).length === 0) {
-    throw new Error('No valid fields to update');
+    const result = await uploadToCloudinary(file, 'taskly/avatars');
+
+    user.avatar = result.url;
+    user.avatarPublicId = result.publicId;
   }
 
-  const user = await User.findByIdAndUpdate(userId, updateData, {
-    new: true,
-    runValidators: true,
-  }).select('-password');
+  // ===== TEXT FIELDS =====
+  if (data.name !== undefined) user.name = data.name;
+  if (data.phone !== undefined) user.phone = data.phone;
 
+  await user.save();
+
+  user.password = undefined; // ẩn password
   return user;
 };
 

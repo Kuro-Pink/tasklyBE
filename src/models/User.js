@@ -30,6 +30,8 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    avatarPublicId: { type: String, default: null },
+
     role: {
       type: String,
       enum: ['Admin', 'User'],
