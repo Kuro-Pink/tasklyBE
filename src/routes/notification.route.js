@@ -8,10 +8,11 @@ import {
 } from '../controllers/notification.controller.js';
 
 const router = express.Router();
+router.use(protect);
 
-router.get('/', protect, getMyNotifications);
+router.get('/', getMyNotifications);
 router.get('/unread-count', getUnreadCount);
-router.patch('/:id/read', protect, markRead);
-router.patch('/read-all', protect, markAllRead);
+router.patch('/:id/read', markRead);
+router.patch('/read-all', markAllRead);
 
 export default router;

@@ -1,4 +1,6 @@
 import Issue from '../models/Issue.js';
+import Status from '../models/Status.js';
+import Sprint from '../models/Sprint.js';
 import ApiError from '../utils/ApiError.js';
 import { requireRole } from '../utils/permission.js';
 import {
@@ -46,6 +48,7 @@ export const createIssueService = async (data, userId) => {
 
   if (parentId) {
     parentIssue = await Issue.findById(parentId);
+    console.log('parentIssue', parentIssue);
     if (!parentIssue) throw new ApiError(404, 'Parent issue not found');
 
     if (parentIssue.type === 'Subtask') {
@@ -236,7 +239,7 @@ export const moveStatusService = async (id, statusId, userId) => {
 
   if (!issue) throw new ApiError(404, 'Issue not found');
 
-  await requireRole(projectId, userId, ['Owner', 'Admin']);
+  await requireRole(issue.project, userId, ['Owner', 'Admin']);
 
   issue.status = statusId;
   await issue.save();
@@ -258,9 +261,11 @@ export const moveStatusService = async (id, statusId, userId) => {
 /* ===================== MOVE SPRINT ===================== */
 export const moveSprintService = async (id, sprintId, userId) => {
   const issue = await Issue.findById(id);
-  const sprint = sprintId ? await Sprint.findById(sprintId) : null;
+  const sprint = await Sprint.findById(sprintId);
 
   if (!issue) throw new ApiError(404, 'Issue not found');
+
+  await requireRole(issue.project, userId, ['Owner', 'Admin']);
 
   issue.sprint = sprintId || null;
   await issue.save();

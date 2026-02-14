@@ -72,7 +72,7 @@ export const deleteCommentService = async (commentId, userId) => {
   const issue = await Issue.findById(comment.issue);
   if (!issue) throw new ApiError(404, 'Issue not found');
 
-  await requireRole(issue.project, userId, ['Owner', 'Admin']);
+  await requireRole(issue.project, userId, ['Owner', 'Admin', 'Member']);
 
   // cho phép author tự xóa
   if (comment.author.toString() !== userId.toString()) {

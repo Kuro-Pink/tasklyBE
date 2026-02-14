@@ -16,10 +16,13 @@ import {
 
 /* ===================== CREATE ===================== */
 export const createIssue = catchAsync(async (req, res) => {
-  const issue = await createIssueService({
-    ...req.body,
-    reporterId: req.user._id,
-  });
+  const issue = await createIssueService(
+    {
+      ...req.body,
+      reporterId: req.user._id,
+    },
+    req.user._id,
+  );
 
   res.status(201).json(new ApiResponse(201, issue, 'Issue created successfully'));
 });

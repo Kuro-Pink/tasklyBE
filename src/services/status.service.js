@@ -90,7 +90,7 @@ export const reorderStatusService = async (projectId, statusOrders, userId) => {
 };
 
 /* ===================== DELETE ===================== */
-export const deleteStatusService = async (id, moveToStatusId = null, userId) => {
+export const deleteStatusService = async (id, projectId, moveToStatusId = null, userId) => {
   const status = await Status.findById(id);
   if (!status) throw new ApiError(404, 'Status not found');
 

@@ -51,9 +51,9 @@ export const reorderStatus = catchAsync(async (req, res) => {
 
 /* ===================== DELETE ===================== */
 export const deleteStatus = catchAsync(async (req, res) => {
-  const { moveToStatusId } = req.body;
+  const { projectId, moveToStatusId } = req.body;
 
-  await deleteStatusService(req.params.id, moveToStatusId, req.user._id);
+  await deleteStatusService(req.params.id, projectId, moveToStatusId, req.user._id);
 
   res.json(new ApiResponse(200, null, 'Deleted'));
 });
