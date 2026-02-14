@@ -69,6 +69,30 @@ export const refreshTokenService = async (token) => {
   return userObj;
 };
 
+/* ================= UPDATE USER INFO ================= */
+export const updateUserInfoService = async (userId, data) => {
+  const allowedFields = ['name', 'avatar', 'phone'];
+
+  const updateData = {};
+
+  allowedFields.forEach((field) => {
+    if (data[field] !== undefined) {
+      updateData[field] = data[field];
+    }
+  });
+
+  if (Object.keys(updateData).length === 0) {
+    throw new Error('No valid fields to update');
+  }
+
+  const user = await User.findByIdAndUpdate(userId, updateData, {
+    new: true,
+    runValidators: true,
+  }).select('-password');
+
+  return user;
+};
+
 /* ================= LOGOUT ================= */
 export const logoutService = async (userId) => {
   const user = await User.findById(userId);

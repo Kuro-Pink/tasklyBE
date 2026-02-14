@@ -6,6 +6,7 @@ import {
   loginUserService,
   saveRefreshTokenService,
   refreshTokenService,
+  updateUserInfoService,
   logoutService,
 } from '../services/auth.service.js';
 
@@ -59,6 +60,15 @@ export const refreshToken = catchAsync(async (req, res) => {
       'Token refreshed',
     ),
   );
+});
+
+/* ================= UPDATE ME ================= */
+export const updateMe = catchAsync(async (req, res) => {
+  const userId = req.user._id;
+
+  const user = await updateUserInfoService(userId, req.body);
+
+  res.json(new ApiResponse(200, user, 'Update profile success'));
 });
 
 /* ================= LOGOUT ================= */
