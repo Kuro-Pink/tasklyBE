@@ -31,12 +31,12 @@ export const emitIssueDeleted = (projectId, issueId) => {
   emitToProject(projectId, 'issue:deleted', issueId);
 };
 
-export const emitIssueMovedStatus = (issueId, data) => {
-  emitToIssue(issueId, 'issue:statusMoved', data);
+export const emitIssueMovedStatus = (projectId, data) => {
+  emitToProject(projectId, 'issue:statusMoved', data);
 };
 
-export const emitIssueMovedSprint = (issueId, data) => {
-  emitToIssue(issueId, 'issue:sprintMoved', data);
+export const emitIssueMovedSprint = (projectId, data) => {
+  emitToProject(projectId, 'issue:sprintMoved', data);
 };
 
 export const emitIssueAssigned = (projectId, issue) => {

@@ -1,5 +1,5 @@
 import cloudinary from '../config/cloudinary.js';
-import { ApiError } from './ApiError.js';
+import ApiError from './ApiError.js';
 
 export const uploadToCloudinary = async (file, folder = 'avatars') => {
   return new Promise((resolve, reject) => {

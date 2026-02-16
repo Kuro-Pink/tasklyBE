@@ -52,7 +52,10 @@ const issueSchema = new mongoose.Schema(
       default: 'Medium',
     },
 
-    number: Number,
+    number: {
+      type: Number,
+      required: true,
+    },
   },
   { timestamps: true },
 );

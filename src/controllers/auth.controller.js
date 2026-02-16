@@ -80,5 +80,5 @@ export const logout = catchAsync(async (req, res) => {
 
 /* ================= ME ================= */
 export const me = catchAsync(async (req, res) => {
-  res.json(new ApiResponse(200, 'OK', req.user));
+  res.json(new ApiResponse(200, req.user, 'OK'));
 });

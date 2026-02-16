@@ -64,6 +64,11 @@ export const createIssueService = async (data, userId) => {
     }
   }
 
+  // ===== AUTO NUMBER =====
+  const lastIssue = await Issue.findOne({ project: projectId }).sort('-number').select('number');
+
+  const nextNumber = lastIssue ? lastIssue.number + 1 : 1;
+
   const issue = await Issue.create({
     title,
     description: description || null,
@@ -74,6 +79,7 @@ export const createIssueService = async (data, userId) => {
     assignee: assigneeId || null,
     parent: parentId || null,
     reporter: reporterId,
+    number: nextNumber,
   });
   await issue.populate('assignee', 'name avatar');
 
@@ -117,7 +123,7 @@ export const getIssuesService = async (query) => {
   const skip = (page - 1) * limit;
 
   const issues = await Issue.find(filter)
-    .populate('assignee reporter status')
+    .populate('project assignee reporter status')
     .sort(sort)
     .skip(skip)
     .limit(Number(limit));
@@ -243,8 +249,11 @@ export const moveStatusService = async (id, statusId, userId) => {
 
   issue.status = statusId;
   await issue.save();
-  await issue.populate('assignee', 'name avatar');
-
+  await issue.populate([
+    { path: 'status' },
+    { path: 'project' },
+    { path: 'assignee', select: 'name avatar' },
+  ]);
   await createActivityService({
     project: issue.project,
     issue: issue._id,
@@ -269,8 +278,11 @@ export const moveSprintService = async (id, sprintId, userId) => {
 
   issue.sprint = sprintId || null;
   await issue.save();
-  await issue.populate('assignee', 'name avatar');
-
+  await issue.populate([
+    { path: 'status' },
+    { path: 'project' },
+    { path: 'assignee', select: 'name avatar' },
+  ]);
   await createActivityService({
     project: issue.project,
     issue: issue._id,
@@ -293,8 +305,11 @@ export const assignUserService = async (id, assigneeId, userId) => {
 
   issue.assignee = assigneeId;
   await issue.save();
-  await issue.populate('assignee', 'name avatar');
-
+  await issue.populate([
+    { path: 'status' },
+    { path: 'project' },
+    { path: 'assignee', select: 'name avatar' },
+  ]);
   // ACTIVITY
   await createActivityService({
     project: issue.project,
