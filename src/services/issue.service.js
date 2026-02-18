@@ -1,6 +1,7 @@
 import Issue from '../models/Issue.js';
 import Status from '../models/Status.js';
 import Sprint from '../models/Sprint.js';
+import Counter from '../models/Counter.js';
 import ApiError from '../utils/ApiError.js';
 import { requireRole } from '../utils/permission.js';
 import {
@@ -65,9 +66,14 @@ export const createIssueService = async (data, userId) => {
   }
 
   // ===== AUTO NUMBER =====
-  const lastIssue = await Issue.findOne({ project: projectId }).sort('-number').select('number');
 
-  const nextNumber = lastIssue ? lastIssue.number + 1 : 1;
+  const counter = await Counter.findOneAndUpdate(
+    { project: projectId },
+    { $inc: { seq: 1 } },
+    { new: true, upsert: true },
+  );
+
+  const nextNumber = counter.seq;
 
   const issue = await Issue.create({
     title,
@@ -81,7 +87,14 @@ export const createIssueService = async (data, userId) => {
     reporter: reporterId,
     number: nextNumber,
   });
-  await issue.populate('assignee', 'name avatar');
+  await issue.populate([
+    { path: 'project' },
+    { path: 'status' },
+    { path: 'sprint' },
+    { path: 'assignee', select: 'name avatar' },
+    { path: 'reporter', select: 'name avatar' },
+    { path: 'parent', select: '_id title type number' },
+  ]);
 
   await createActivityService({
     project: issue.project,
@@ -123,7 +136,14 @@ export const getIssuesService = async (query) => {
   const skip = (page - 1) * limit;
 
   const issues = await Issue.find(filter)
-    .populate('project assignee reporter status')
+    .populate([
+      { path: 'project' },
+      { path: 'status' },
+      { path: 'sprint' },
+      { path: 'assignee', select: 'name avatar' },
+      { path: 'reporter', select: 'name avatar' },
+      { path: 'parent', select: '_id title type number' },
+    ])
     .sort(sort)
     .skip(skip)
     .limit(Number(limit));
@@ -205,9 +225,14 @@ export const updateIssueService = async (id, updates, userId) => {
   issue.sprint = updates.sprintId ?? issue.sprint;
   issue.assignee = updates.assigneeId ?? issue.assignee;
   issue.parent = newParent || null;
+  issue.priority = updates.priority ?? issue.priority;
 
   await issue.save();
-  await issue.populate('assignee', 'name avatar');
+  await issue.populate([
+    { path: 'status' },
+    { path: 'project' },
+    { path: 'assignee', select: 'name avatar' },
+  ]);
   emitIssueUpdated(issue.project, issue);
 
   return issue;
@@ -224,8 +249,11 @@ export const deleteIssueService = async (id, userId) => {
   await Issue.deleteMany({ parent: id });
 
   await Issue.findByIdAndDelete(id);
-  await issue.populate('assignee', 'name avatar');
-
+  await issue.populate([
+    { path: 'status' },
+    { path: 'project' },
+    { path: 'assignee', select: 'name avatar' },
+  ]);
   await createActivityService({
     project: issue.project,
     user: userId,
@@ -310,6 +338,7 @@ export const assignUserService = async (id, assigneeId, userId) => {
     { path: 'project' },
     { path: 'assignee', select: 'name avatar' },
   ]);
+
   // ACTIVITY
   await createActivityService({
     project: issue.project,
