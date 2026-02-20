@@ -20,7 +20,7 @@ const statusSchema = new mongoose.Schema(
 /* ================= INDEX ================= */
 
 // Load board
-statusSchema.index({ project: 1, order: 1 });
+statusSchema.index({ project: 1, order: 1 }, { unique: true });
 
 // Không cho trùng tên status trong cùng project
 statusSchema.index({ project: 1, name: 1 }, { unique: true });

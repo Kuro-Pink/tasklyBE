@@ -1,5 +1,6 @@
 import Project from '../models/Project.js';
 import User from '../models/User.js';
+import Status from '../models/Status.js';
 import ApiError from '../utils/ApiError.js';
 import { requireRole } from '../utils/permission.js';
 import { emitProjectCreated, emitProjectUpdated } from '../utils/socketEmitter.js';
@@ -13,6 +14,14 @@ export const createProjectService = async (data, userId) => {
     owner: userId,
     members: [{ user: userId, role: 'Owner' }],
   });
+
+  // ===== DEFAULT STATUSES =====
+  await Status.insertMany([
+    { name: 'Phải làm', order: 0, project: project._id },
+    { name: 'Đang làm', order: 1, project: project._id },
+    { name: 'Kiểm tra', order: 2, project: project._id },
+    { name: 'Hoàn thành', order: 3, project: project._id },
+  ]);
 
   emitProjectCreated(project._id, project);
 
