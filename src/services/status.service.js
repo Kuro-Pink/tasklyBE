@@ -22,12 +22,15 @@ export const createStatusService = async ({ name, color, projectId }, userId) =>
     project: projectId,
   });
 
+  await status.populate('project');
+
   return status;
 };
 
 /* ===================== GET ALL ===================== */
 export const getStatusesService = async (projectId) => {
-  const statuses = await Status.find({ project: projectId }).sort({ order: 1 });
+  const statuses = await Status.find({ project: projectId }).sort({ order: 1 }).populate('project');
+
   return statuses;
 };
 
@@ -42,6 +45,8 @@ export const updateStatusService = async (id, updates, userId) => {
   status.color = updates.color ?? status.color;
 
   await status.save();
+  await status.populate('project');
+
   return status;
 };
 
@@ -86,7 +91,9 @@ export const reorderStatusService = async (projectId, statusOrders, userId) => {
 
   await Status.bulkWrite(bulk);
 
-  return true;
+  const updated = await Status.find({ project: projectId }).sort({ order: 1 }).populate('project');
+
+  return updated;
 };
 
 /* ===================== DELETE ===================== */

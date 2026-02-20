@@ -38,15 +38,15 @@ export const updateStatus = catchAsync(async (req, res) => {
 
 /* ===================== REORDER ===================== */
 export const reorderStatus = catchAsync(async (req, res) => {
-  const { projectId, orders } = req.body;
+  const { projectId, statuses } = req.body;
 
-  if (!projectId || !orders) {
+  if (!projectId || !statuses) {
     return res.json(new ApiResponse(400, null, 'Invalid payload'));
   }
 
-  await reorderStatusService(projectId, orders, req.user._id);
+  const updated = await reorderStatusService(projectId, statuses, req.user._id);
 
-  res.json(new ApiResponse(200, null, 'Reordered'));
+  res.json(new ApiResponse(200, updated));
 });
 
 /* ===================== DELETE ===================== */
