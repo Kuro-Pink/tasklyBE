@@ -8,7 +8,7 @@ export const createIssueSchema = z.object({
 
   type: z.enum(['Epic', 'Story', 'Task', 'Bug', 'Subtask']),
   projectId: objectId,
-  statusId: objectId,
+  statusId: objectId.optional(),
 
   sprintId: objectId.optional(),
   assigneeId: objectId.optional(),

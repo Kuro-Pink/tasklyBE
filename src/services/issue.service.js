@@ -29,11 +29,23 @@ export const createIssueService = async (data, userId) => {
     reporterId,
   } = data;
 
-  if (!title || !type || !projectId || !statusId) {
+  if (!title || !type || !projectId) {
     throw new ApiError(400, 'Missing required fields');
   }
 
   await requireRole(projectId, userId, ['Owner', 'Admin', 'Member']);
+
+  let finalStatusId = statusId;
+
+  if (!finalStatusId) {
+    const firstStatus = await Status.findOne({ project: projectId }).sort('order');
+
+    if (!firstStatus) {
+      throw new ApiError(400, 'Project has no status');
+    }
+
+    finalStatusId = firstStatus._id;
+  }
 
   let parentIssue = null;
 
@@ -80,7 +92,7 @@ export const createIssueService = async (data, userId) => {
     description: description || null,
     type,
     project: projectId,
-    status: statusId,
+    status: finalStatusId,
     sprint: sprintId || null,
     assignee: assigneeId || null,
     parent: parentId || null,
