@@ -128,6 +128,7 @@ export const getIssuesService = async (query) => {
     status,
     assignee,
     priority,
+    label,
     search,
     sort = '-createdAt',
     page = 1,
@@ -140,7 +141,7 @@ export const getIssuesService = async (query) => {
   if (status) filter.status = status;
   if (assignee) filter.assignee = assignee;
   if (priority) filter.priority = priority;
-
+  if (label) filter.labels = label;
   if (search) {
     filter.title = { $regex: search, $options: 'i' };
   }
@@ -238,6 +239,16 @@ export const updateIssueService = async (id, updates, userId) => {
   issue.assignee = updates.assigneeId ?? issue.assignee;
   issue.parent = newParent || null;
   issue.priority = updates.priority ?? issue.priority;
+  if (
+    updates.startDate &&
+    updates.dueDate &&
+    new Date(updates.startDate) > new Date(updates.dueDate)
+  ) {
+    throw new ApiError(400, 'Start date cannot be after due date');
+  }
+  issue.labels = updates.labels ?? issue.labels;
+  issue.startDate = updates.startDate ?? issue.startDate;
+  issue.dueDate = updates.dueDate ?? issue.dueDate;
 
   await issue.save();
   await issue.populate([

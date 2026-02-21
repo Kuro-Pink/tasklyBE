@@ -52,6 +52,27 @@ const issueSchema = new mongoose.Schema(
       default: 'Medium',
     },
 
+    flag: {
+      type: String,
+      enum: ['Impediment', 'Blocked', null],
+      default: null,
+    },
+
+    labels: {
+      type: [String],
+      default: [],
+    },
+
+    startDate: {
+      type: Date,
+      default: null,
+    },
+
+    dueDate: {
+      type: Date,
+      default: null,
+    },
+
     number: {
       type: Number,
       required: true,
@@ -79,5 +100,8 @@ issueSchema.index({ project: 1, createdAt: -1 });
 
 // Search number trong project
 issueSchema.index({ project: 1, number: 1 }, { unique: true });
+
+issueSchema.index({ project: 1, startDate: 1 });
+issueSchema.index({ project: 1, dueDate: 1 });
 
 export default mongoose.model('Issue', issueSchema);
