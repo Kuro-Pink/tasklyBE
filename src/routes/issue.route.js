@@ -13,6 +13,10 @@ import {
   moveSprint,
   assignUser,
   changeParent,
+  addLabel,
+  removeLabel,
+  setFlag,
+  clearFlag,
 } from '../controllers/issue.controller.js';
 
 const router = express.Router();
@@ -29,5 +33,10 @@ router.patch('/:id/sprint', moveSprint);
 router.patch('/:id/status', moveStatus);
 router.patch('/:id/assign', assignUser);
 router.patch('/:id/parent', changeParent);
+
+router.patch('/:id/add-label', addLabel);
+router.patch('/:id/remove-label', removeLabel);
+router.patch('/:id/set-flag', setFlag);
+router.patch('/:id/clear-flag', clearFlag);
 
 export default router;

@@ -2,6 +2,7 @@ import Issue from '../models/Issue.js';
 import Status from '../models/Status.js';
 import Sprint from '../models/Sprint.js';
 import Counter from '../models/Counter.js';
+import Label from '../models/Label.js';
 import ApiError from '../utils/ApiError.js';
 import { requireRole } from '../utils/permission.js';
 import {
@@ -14,6 +15,18 @@ import {
 } from '../utils/socketEmitter.js';
 import { createNotificationService } from './notification.service.js';
 import { createActivityService } from './activity.service.js';
+
+const populateIssueFull = async (issue) => {
+  return issue.populate([
+    { path: 'project' },
+    { path: 'status' },
+    { path: 'sprint' },
+    { path: 'labels' },
+    { path: 'assignee', select: 'name avatar' },
+    { path: 'reporter', select: 'name avatar' },
+    { path: 'parent', select: '_id title type number' },
+  ]);
+};
 
 /* ===================== CREATE ===================== */
 export const createIssueService = async (data, userId) => {
@@ -116,7 +129,16 @@ export const createIssueService = async (data, userId) => {
     content: `đã tạo công việc "${issue.title}"`,
   });
 
+  /* ===== RECALC EPIC AFTER CREATE ===== */
+  if (issue.parent) {
+    const parentIssue = await Issue.findById(issue.parent);
+    if (parentIssue?.type === 'Epic') {
+      await recalculateEpicTimeline(parentIssue._id);
+    }
+  }
+
   emitIssueCreated(issue.project, issue);
+  console.log('🚀 EMIT ISSUE_CREATED TO:', projectId);
 
   return issue;
 };
@@ -153,6 +175,7 @@ export const getIssuesService = async (query) => {
       { path: 'project' },
       { path: 'status' },
       { path: 'sprint' },
+      { path: 'labels' },
       { path: 'assignee', select: 'name avatar' },
       { path: 'reporter', select: 'name avatar' },
       { path: 'parent', select: '_id title type number' },
@@ -180,7 +203,8 @@ export const getIssueDetailService = async (id) => {
     .populate('assignee')
     .populate('reporter')
     .populate('parent')
-    .populate('sprint');
+    .populate('sprint')
+    .populate('labels');
 
   if (!issue) throw new ApiError(404, 'Issue not found');
 
@@ -190,6 +214,36 @@ export const getIssueDetailService = async (id) => {
     ...issue.toObject(),
     children,
   };
+};
+
+/* ===================== RECALC EPIC TIMELINE ===================== */
+const recalculateEpicTimeline = async (epicId) => {
+  if (!epicId) return;
+
+  const children = await Issue.find({
+    parent: epicId,
+    startDate: { $ne: null },
+    dueDate: { $ne: null },
+  });
+
+  if (!children.length) {
+    await Issue.findByIdAndUpdate(epicId, {
+      startDate: null,
+      dueDate: null,
+    });
+    return;
+  }
+
+  const startDates = children.map((c) => new Date(c.startDate));
+  const dueDates = children.map((c) => new Date(c.dueDate));
+
+  const minStart = new Date(Math.min(...startDates));
+  const maxDue = new Date(Math.max(...dueDates));
+
+  await Issue.findByIdAndUpdate(epicId, {
+    startDate: minStart,
+    dueDate: maxDue,
+  });
 };
 
 /* ===================== UPDATE ===================== */
@@ -251,8 +305,16 @@ export const updateIssueService = async (id, updates, userId) => {
   issue.dueDate = updates.dueDate ?? issue.dueDate;
 
   await issue.save();
+  /* ===== RECALC EPIC IF NEEDED ===== */
+  if (issue.parent) {
+    const parentIssue = await Issue.findById(issue.parent);
+    if (parentIssue?.type === 'Epic') {
+      await recalculateEpicTimeline(parentIssue._id);
+    }
+  }
   await issue.populate([
     { path: 'status' },
+    { path: 'project' },
     { path: 'project' },
     { path: 'assignee', select: 'name avatar' },
   ]);
@@ -300,11 +362,8 @@ export const moveStatusService = async (id, statusId, userId) => {
 
   issue.status = statusId;
   await issue.save();
-  await issue.populate([
-    { path: 'status' },
-    { path: 'project' },
-    { path: 'assignee', select: 'name avatar' },
-  ]);
+  await populateIssueFull(issue);
+
   await createActivityService({
     project: issue.project,
     issue: issue._id,
@@ -329,11 +388,8 @@ export const moveSprintService = async (id, sprintId, userId) => {
 
   issue.sprint = sprintId || null;
   await issue.save();
-  await issue.populate([
-    { path: 'status' },
-    { path: 'project' },
-    { path: 'assignee', select: 'name avatar' },
-  ]);
+  await populateIssueFull(issue);
+
   await createActivityService({
     project: issue.project,
     issue: issue._id,
@@ -414,8 +470,66 @@ export const changeParentService = async (id, parentId, userId) => {
     }
   }
 
+  await recalculateEpicTimeline(parentId);
+
   issue.parent = parentId || null;
   await issue.save();
+
+  await populateIssueFull(issue);
+
+  return issue;
+};
+
+export const addLabelService = async (issueId, labelId, userId) => {
+  const issue = await Issue.findById(issueId);
+
+  if (!issue) throw new Error('Issue not found');
+
+  if (!issue.labels.includes(labelId)) {
+    issue.labels.push(labelId);
+    await issue.save();
+  }
+
+  await populateIssueFull(issue);
+
+  emitIssueUpdated(issue.project.toString(), issue);
+
+  return issue;
+};
+
+export const removeLabelService = async (issueId, labelId) => {
+  const issue = await Issue.findById(issueId);
+
+  issue.labels = issue.labels.filter((id) => id.toString() !== labelId);
+
+  await issue.save();
+  await populateIssueFull(issue);
+
+  emitIssueUpdated(issue.project.toString(), issue);
+
+  return issue;
+};
+
+export const setFlagService = async (issueId, flag) => {
+  const issue = await Issue.findById(issueId);
+
+  issue.flag = flag;
+  await issue.save();
+  await populateIssueFull(issue);
+
+  emitIssueUpdated(issue.project.toString(), issue);
+
+  return issue;
+};
+
+export const clearFlagService = async (issueId) => {
+  const issue = await Issue.findById(issueId);
+
+  issue.flag = null;
+  await issue.save();
+  await populateIssueFull(issue);
+
+  emitIssueUpdated(issue.project.toString(), issue);
 
   return issue;
 };

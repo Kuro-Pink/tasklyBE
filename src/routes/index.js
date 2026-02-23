@@ -7,6 +7,7 @@ import issueRoutes from './issue.route.js';
 import commentRoutes from './comment.route.js';
 import notificationRoutes from './notification.route.js';
 import activityRoutes from './activity.routes.js';
+import labelRoutes from './label.route.js';
 
 const router = express.Router();
 
@@ -18,6 +19,7 @@ router.use('/issues', issueRoutes);
 router.use('/comments', commentRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/activities', activityRoutes);
+router.use('/labels', labelRoutes);
 
 // Health check
 router.get('/health', (req, res) => {

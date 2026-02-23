@@ -54,14 +54,16 @@ const issueSchema = new mongoose.Schema(
 
     flag: {
       type: String,
-      enum: ['Impediment', 'Blocked', null],
+      enum: ['Impediment', 'Blocked'],
       default: null,
     },
 
-    labels: {
-      type: [String],
-      default: [],
-    },
+    labels: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Label',
+      },
+    ],
 
     startDate: {
       type: Date,

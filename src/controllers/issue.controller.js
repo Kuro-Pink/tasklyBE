@@ -12,6 +12,10 @@ import {
   moveSprintService,
   assignUserService,
   changeParentService,
+  addLabelService,
+  removeLabelService,
+  setFlagService,
+  clearFlagService,
 } from '../services/issue.service.js';
 
 /* ===================== CREATE ===================== */
@@ -89,4 +93,32 @@ export const changeParent = catchAsync(async (req, res) => {
   const issue = await changeParentService(req.params.id, req.body.parentId, req.user._id);
 
   res.json(new ApiResponse(200, issue, 'Parent changed'));
+});
+
+/* ===================== ADD LABEL ===================== */
+export const addLabel = catchAsync(async (req, res) => {
+  const issue = await addLabelService(req.params.id, req.body.labelId, req.user._id);
+
+  res.json(new ApiResponse(200, issue, 'Label added'));
+});
+
+/* ===================== REMOVE LABEL ===================== */
+export const removeLabel = catchAsync(async (req, res) => {
+  const issue = await removeLabelService(req.params.id, req.body.labelId);
+
+  res.json(new ApiResponse(200, issue, 'Label removed'));
+});
+
+/* ===================== SET FLAG ===================== */
+export const setFlag = catchAsync(async (req, res) => {
+  const issue = await setFlagService(req.params.id, req.body.flag);
+
+  res.json(new ApiResponse(200, issue, 'Flag updated'));
+});
+
+/* ===================== CLEAR FLAG ===================== */
+export const clearFlag = catchAsync(async (req, res) => {
+  const issue = await clearFlagService(req.params.id);
+
+  res.json(new ApiResponse(200, issue, 'Flag cleared'));
 });
