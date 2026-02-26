@@ -11,7 +11,7 @@ const sprintSchema = new mongoose.Schema(
     },
 
     startDate: Date,
-    endDate: Date,
+    dueDate: Date,
 
     isActive: {
       type: Boolean,

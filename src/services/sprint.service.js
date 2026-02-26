@@ -41,7 +41,7 @@ export const updateSprintService = async (id, updates) => {
 
   sprint.name = updates.name ?? sprint.name;
   sprint.startDate = updates.startDate ?? sprint.startDate;
-  sprint.endDate = updates.endDate ?? sprint.endDate;
+  sprint.dueDate = updates.dueDate ?? sprint.dueDate;
 
   await sprint.save();
   return sprint;

@@ -301,17 +301,16 @@ export const updateIssueService = async (id, updates, userId) => {
     throw new ApiError(400, 'Start date cannot be after due date');
   }
   issue.labels = updates.labels ?? issue.labels;
-  issue.startDate = updates.startDate ?? issue.startDate;
-  issue.dueDate = updates.dueDate ?? issue.dueDate;
+  if (updates.startDate !== undefined) {
+    issue.startDate = updates.startDate ? new Date(updates.startDate) : null;
+  }
+
+  if (updates.dueDate !== undefined) {
+    issue.dueDate = updates.dueDate ? new Date(updates.dueDate) : null;
+  }
 
   await issue.save();
-  /* ===== RECALC EPIC IF NEEDED ===== */
-  if (issue.parent) {
-    const parentIssue = await Issue.findById(issue.parent);
-    if (parentIssue?.type === 'Epic') {
-      await recalculateEpicTimeline(parentIssue._id);
-    }
-  }
+
   await issue.populate([
     { path: 'status' },
     { path: 'project' },
