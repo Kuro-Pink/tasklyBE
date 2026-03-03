@@ -6,13 +6,21 @@ import { requireRole } from '../utils/permission.js';
 import { emitProjectCreated, emitProjectUpdated } from '../utils/socketEmitter.js';
 import { createNotificationService } from './notification.service.js';
 import { createActivityService } from './activity.service.js';
+import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import ProjectInvitation from '../models/ProjectInvitation.js';
+import ProjectJoinRequest from '../models/ProjectJoinRequest.js';
+import { sendInvitationEmail } from './mail.service.js';
 
 /* ===================== CREATE ===================== */
 export const createProjectService = async (data, userId) => {
+  const inviteCode = crypto.randomBytes(4).toString('hex');
+
   const project = await Project.create({
     ...data,
     owner: userId,
     members: [{ user: userId, role: 'Owner' }],
+    inviteCode,
   });
 
   // ===== DEFAULT STATUSES =====
@@ -30,13 +38,16 @@ export const createProjectService = async (data, userId) => {
 
 /* ===================== GET ALL ===================== */
 export const getProjectsService = async (userId) => {
-  const projects = await Project.find({ 'members.user': userId });
+  const projects = await Project.find({ 'members.user': userId }).populate(
+    'members.user',
+    'name email phone avatar',
+  );
   return projects;
 };
 
 /* ===================== GET DETAIL ===================== */
 export const getProjectDetailService = async (id) => {
-  const project = await Project.findById(id).populate('members.user');
+  const project = await Project.findById(id).populate('members.user', 'name email phone avatar');
   if (!project) throw new ApiError(404, 'Project not found');
 
   return project;
@@ -187,6 +198,203 @@ export const changeRoleService = async (projectId, memberId, role, userId) => {
   });
 
   /* ===== SOCKET ===== */
+  emitProjectUpdated(project._id, project);
+
+  return project;
+};
+
+export const inviteByEmailService = async (projectId, email, role, userId) => {
+  const project = await Project.findById(projectId);
+  if (!project) throw new ApiError(404, 'Project not found');
+
+  await requireRole(projectId, userId, ['Owner', 'Admin']);
+
+  const token = jwt.sign(
+    {
+      projectId,
+      email,
+    },
+    process.env.INVITE_SECRET,
+    { expiresIn: '7d' },
+  );
+
+  const invitation = await ProjectInvitation.create({
+    project: projectId,
+    email,
+    role,
+    token,
+    invitedBy: userId,
+    expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+  });
+
+  await sendInvitationEmail(email, project.name, token);
+
+  return { token };
+};
+
+export const acceptInvitationService = async (token, user) => {
+  const decoded = jwt.verify(token, process.env.INVITE_SECRET);
+
+  const invitation = await ProjectInvitation.findOne({
+    token,
+    status: 'Pending',
+  });
+
+  if (!invitation) throw new ApiError(400, 'Invalid invitation');
+
+  if (invitation.expiresAt < new Date()) throw new ApiError(400, 'Invitation expired');
+
+  if (user.email !== invitation.email) throw new ApiError(403, 'Email does not match invitation');
+
+  const project = await Project.findById(invitation.project);
+
+  const userId = user._id.toString();
+
+  const exists = project.members.some((m) => {
+    if (!m?.user) return false;
+    return m.user.toString() === userId;
+  });
+  if (!exists) {
+    project.members.push({ user: user._id, role: invitation.role });
+    await project.save();
+  }
+
+  invitation.status = 'Accepted';
+  await invitation.save();
+
+  await project.populate('members.user', 'name email phone avatar');
+
+  await createActivityService({
+    project: project._id,
+    user: user._id,
+    action: 'ACCEPT_INVITATION',
+    content: `đã tham gia dự án`,
+  });
+
+  emitProjectUpdated(project._id, project);
+
+  return project;
+};
+
+export const joinByCodeService = async (inviteCode, userId) => {
+  const project = await Project.findOne({ inviteCode });
+  if (!project) throw new ApiError(404, 'Invalid invite code');
+
+  const isMember = project.members.find((m) => m.user.toString() === userId.toString());
+
+  if (isMember) throw new ApiError(400, 'Already a member');
+
+  // check existing request
+  const existing = await ProjectJoinRequest.findOne({
+    project: project._id,
+    user: userId,
+    status: 'Pending',
+  });
+
+  if (existing) throw new ApiError(400, 'Request already submitted');
+
+  const request = await ProjectJoinRequest.create({
+    project: project._id,
+    user: userId,
+  });
+
+  return request;
+};
+
+export const getJoinRequestsService = async (projectId, userId, status = 'Pending') => {
+  await requireRole(projectId, userId, ['Owner', 'Admin']);
+
+  const requests = await ProjectJoinRequest.find({
+    project: projectId,
+    status,
+  })
+    .populate('user', 'name email phone avatar')
+    .sort({ createdAt: -1 });
+
+  return requests;
+};
+
+export const approveJoinRequestService = async (requestId, ownerId) => {
+  const request = await ProjectJoinRequest.findById(requestId);
+  if (!request) throw new ApiError(404, 'Request not found');
+  if (!request.user) {
+    throw new ApiError(400, 'Invalid user in request');
+  }
+
+  if (request.status !== 'Pending') throw new ApiError(400, 'Request already processed');
+
+  await requireRole(request.project, ownerId, ['Owner', 'Admin']);
+
+  const project = await Project.findById(request.project);
+  if (!project) throw new ApiError(404, 'Project not found');
+
+  const requestUserId = request.user.toString();
+
+  const alreadyMember = project.members.find((m) => {
+    if (!m.user) return false;
+    return m.user.toString() === requestUserId;
+  });
+  if (!alreadyMember) {
+    project.members.push({ user: request.user, role: 'Member' });
+    await project.save();
+  }
+
+  request.status = 'Approved';
+  await request.save();
+  await project.populate('members.user', 'name email phone avatar');
+
+  // ===== ACTIVITY =====
+  await createActivityService({
+    project: project._id,
+    user: ownerId,
+    action: 'APPROVE_JOIN_REQUEST',
+    content: `đã duyệt yêu cầu tham gia dự án`,
+  });
+
+  // ===== NOTIFICATION =====
+  await createNotificationService({
+    user: request.user,
+    project: project._id,
+    type: 'JOIN_APPROVED',
+    content: `Yêu cầu tham gia dự án "${project.name}" đã được chấp thuận`,
+  });
+
+  // ===== SOCKET =====
+  emitProjectUpdated(project._id, project);
+
+  return project;
+};
+
+export const rejectJoinRequestService = async (requestId, ownerId) => {
+  const request = await ProjectJoinRequest.findById(requestId);
+  if (!request) throw new ApiError(404, 'Request not found');
+
+  if (request.status !== 'Pending') throw new ApiError(400, 'Request already processed');
+
+  await requireRole(request.project, ownerId, ['Owner', 'Admin']);
+
+  request.status = 'Rejected';
+  await request.save();
+
+  const project = await Project.findById(request.project);
+  await project.populate('members.user', 'name email phone avatar');
+
+  // ===== ACTIVITY =====
+  await createActivityService({
+    project: project._id,
+    user: ownerId,
+    action: 'REJECT_JOIN_REQUEST',
+    content: `đã từ chối yêu cầu tham gia dự án`,
+  });
+
+  // ===== NOTIFICATION =====
+  await createNotificationService({
+    user: request.user,
+    project: project._id,
+    type: 'JOIN_REJECTED',
+    content: `Yêu cầu tham gia dự án "${project.name}" đã bị từ chối`,
+  });
+
   emitProjectUpdated(project._id, project);
 
   return project;

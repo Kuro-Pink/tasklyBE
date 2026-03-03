@@ -13,6 +13,15 @@ import {
   changeRole,
 } from '../controllers/project.controller.js';
 
+import {
+  inviteByEmail,
+  acceptInvitation,
+  joinByCode,
+  getJoinRequests,
+  approveJoinRequest,
+  rejectJoinRequest,
+} from '../controllers/invitation.controller.js';
+
 const router = express.Router();
 
 router.use(protect);
@@ -26,5 +35,12 @@ router.delete('/:id', deleteProject);
 router.post('/:id/members', addMember);
 router.delete('/:id/members', removeMember);
 router.patch('/:id/role', changeRole);
+
+router.post('/:id/invite', inviteByEmail);
+router.post('/invitations/accept', acceptInvitation);
+router.post('/join-by-code', joinByCode);
+router.get('/:id/join-requests', getJoinRequests);
+router.patch('/join-requests/:id/approve', approveJoinRequest);
+router.patch('/join-requests/:id/reject', rejectJoinRequest);
 
 export default router;

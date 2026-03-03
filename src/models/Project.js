@@ -29,6 +29,10 @@ const projectSchema = new mongoose.Schema(
         },
       },
     ],
+    inviteCode: {
+      type: String,
+      unique: true,
+    },
   },
   { timestamps: true },
 );
