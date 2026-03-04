@@ -46,7 +46,7 @@ export const createCommentService = async (issueId, content, userId) => {
     await createNotificationService({
       user: user._id,
       type: 'MENTION',
-      content: `Bạn được nhắc trong 1 bình luận`,
+      message: `Bạn được nhắc trong 1 bình luận`,
       project: issue.project,
       issue: issue._id,
     });

@@ -119,7 +119,7 @@ export const addMemberService = async (projectId, memberId, role, userId) => {
     user: memberId,
     project: project._id,
     type: 'PROJECT_ADDED',
-    content: `Bạn đã được thêm vào dự án "${project.name}"`,
+    message: `Bạn đã được thêm vào dự án "${project.name}"`,
   });
 
   /* ===== SOCKET ===== */
@@ -156,7 +156,7 @@ export const removeMemberService = async (projectId, memberId, userId) => {
     user: memberId,
     project: project._id,
     type: 'PROJECT_REMOVED',
-    content: `Bạn đã bị xoá khỏi dự án "${project.name}"`,
+    message: `Bạn đã bị xoá khỏi dự án "${project.name}"`,
   });
 
   /* ===== SOCKET ===== */
@@ -194,7 +194,7 @@ export const changeRoleService = async (projectId, memberId, role, userId) => {
     user: memberId,
     project: project._id,
     type: 'ROLE_CHANGED',
-    content: `Vai trò của bạn trong dự án đã được thay đổi thành ${role}`,
+    message: `Vai trò của bạn trong dự án đã được thay đổi thành ${role}`,
   });
 
   /* ===== SOCKET ===== */
@@ -356,7 +356,7 @@ export const approveJoinRequestService = async (requestId, ownerId) => {
     user: request.user,
     project: project._id,
     type: 'JOIN_APPROVED',
-    content: `Yêu cầu tham gia dự án "${project.name}" đã được chấp thuận`,
+    message: `Yêu cầu tham gia dự án "${project.name}" đã được chấp thuận`,
   });
 
   // ===== SOCKET =====
@@ -392,7 +392,7 @@ export const rejectJoinRequestService = async (requestId, ownerId) => {
     user: request.user,
     project: project._id,
     type: 'JOIN_REJECTED',
-    content: `Yêu cầu tham gia dự án "${project.name}" đã bị từ chối`,
+    message: `Yêu cầu tham gia dự án "${project.name}" đã bị từ chối`,
   });
 
   emitProjectUpdated(project._id, project);

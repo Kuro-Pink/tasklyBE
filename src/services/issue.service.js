@@ -434,7 +434,7 @@ export const assignUserService = async (id, assigneeId, userId) => {
     project: issue.project,
     issue: issue._id,
     type: 'ASSIGN',
-    content: `Bạn được giao công việc "${issue.title}"`,
+    message: `Bạn được giao công việc "${issue.title}"`,
   });
 
   /* ===== SOCKET ===== */
