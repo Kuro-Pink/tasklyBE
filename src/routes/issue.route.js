@@ -17,6 +17,7 @@ import {
   removeLabel,
   setFlag,
   clearFlag,
+  checkWorkload,
 } from '../controllers/issue.controller.js';
 
 const router = express.Router();
@@ -38,5 +39,6 @@ router.patch('/:id/add-label', addLabel);
 router.patch('/:id/remove-label', removeLabel);
 router.patch('/:id/set-flag', setFlag);
 router.patch('/:id/clear-flag', clearFlag);
+router.post('/:id/check-workload', checkWorkload);
 
 export default router;

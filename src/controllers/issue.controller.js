@@ -11,6 +11,7 @@ import {
   moveStatusService,
   moveSprintService,
   assignUserService,
+  checkWorkloadService,
   changeParentService,
   addLabelService,
   removeLabelService,
@@ -86,6 +87,13 @@ export const assignUser = catchAsync(async (req, res) => {
   const issue = await assignUserService(req.params.id, req.body.assigneeId, req.user._id);
 
   res.json(new ApiResponse(200, issue, 'User assigned'));
+});
+
+export const checkWorkload = catchAsync(async (req, res) => {
+  const { assigneeId } = req.body;
+
+  const result = await checkWorkloadService(req.params.id, assigneeId, req.user._id);
+  res.json(new ApiResponse(200, result, 'Check Workload'));
 });
 
 /* ===================== CHANGE PARENT ===================== */

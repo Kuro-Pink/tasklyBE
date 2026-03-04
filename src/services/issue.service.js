@@ -3,6 +3,7 @@ import Status from '../models/Status.js';
 import Sprint from '../models/Sprint.js';
 import Counter from '../models/Counter.js';
 import Label from '../models/Label.js';
+import Project from '../models/Project.js';
 import ApiError from '../utils/ApiError.js';
 import { requireRole } from '../utils/permission.js';
 import {
@@ -15,6 +16,7 @@ import {
 } from '../utils/socketEmitter.js';
 import { createNotificationService } from './notification.service.js';
 import { createActivityService } from './activity.service.js';
+import mongoose from 'mongoose';
 
 const populateIssueFull = async (issue) => {
   return issue.populate([
@@ -409,7 +411,7 @@ export const assignUserService = async (id, assigneeId, userId) => {
 
   await requireRole(issue.project, userId, ['Owner', 'Admin']);
 
-  issue.assignee = assigneeId;
+  issue.assignee = assigneeId || null;
   await issue.save();
   await issue.populate([
     { path: 'status' },
@@ -439,6 +441,78 @@ export const assignUserService = async (id, assigneeId, userId) => {
   emitIssueAssigned(issue.project, issue);
 
   return issue;
+};
+
+export const checkWorkloadService = async (issueId, assigneeId, userId) => {
+  const issue = await Issue.findById(issueId);
+  if (!issue) throw new ApiError(404, 'Issue not found');
+
+  await requireRole(issue.project, userId, ['Owner', 'Admin']);
+
+  if (!assigneeId) {
+    return {
+      workloadWarning: false,
+      suggestedUsers: [],
+    };
+  }
+
+  const THRESHOLD = 5;
+
+  const activeCount = await Issue.countDocuments({
+    assignee: assigneeId,
+    project: issue.project,
+  });
+
+  if (activeCount <= THRESHOLD) {
+    return {
+      workloadWarning: false,
+      suggestedUsers: [],
+    };
+  }
+
+  // ===== Lấy members trong project =====
+  const project = await Project.findById(issue.project).populate('members.user', '_id name avatar');
+
+  const memberIds = project.members.map((m) => m.user._id.toString());
+
+  // ===== Tính workload cho từng member =====
+  const workload = await Issue.aggregate([
+    {
+      $match: {
+        project: issue.project,
+        assignee: {
+          $in: memberIds.map((id) => new mongoose.Types.ObjectId(id)),
+        },
+      },
+    },
+    {
+      $group: {
+        _id: '$assignee',
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const workloadMap = {};
+  workload.forEach((w) => {
+    workloadMap[w._id.toString()] = w.count;
+  });
+
+  const memberWorkload = memberIds
+    .filter((id) => id !== assigneeId.toString())
+    .map((id) => ({
+      userId: id,
+      count: workloadMap[id] || 0,
+    }))
+    .sort((a, b) => a.count - b.count)
+    .slice(0, 3);
+
+  const suggestedUsers = memberWorkload.map((m) => m.userId);
+
+  return {
+    workloadWarning: true,
+    suggestedUsers,
+  };
 };
 
 /* ===================== CHANGE PARENT ===================== */
