@@ -8,6 +8,7 @@ import commentRoutes from './comment.route.js';
 import notificationRoutes from './notification.route.js';
 import activityRoutes from './activity.routes.js';
 import labelRoutes from './label.route.js';
+import githubRoutes from './github.route.js';
 
 const router = express.Router();
 
@@ -20,6 +21,7 @@ router.use('/comments', commentRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/activities', activityRoutes);
 router.use('/labels', labelRoutes);
+router.use('/github', githubRoutes);
 
 // Health check
 router.get('/health', (req, res) => {

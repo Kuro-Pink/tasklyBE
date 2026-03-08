@@ -5,11 +5,21 @@ const octokit = new Octokit({
 });
 
 export const createGithubRepo = async (repoName, description) => {
-  const response = await octokit.repos.createForAuthenticatedUser({
+  const repo = await octokit.repos.createForAuthenticatedUser({
     name: repoName,
     description,
     private: true,
   });
 
-  return response.data;
+  await octokit.repos.createWebhook({
+    owner: process.env.GITHUB_USERNAME,
+    repo: repoName,
+    config: {
+      url: `${process.env.SERVER_URL}/api/v1/github/webhook`,
+      content_type: 'json',
+    },
+    events: ['push'],
+  });
+
+  return repo.data;
 };

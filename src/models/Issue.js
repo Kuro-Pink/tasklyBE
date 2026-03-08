@@ -79,6 +79,14 @@ const issueSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    commits: [
+      {
+        message: String,
+        url: String,
+        author: String,
+        date: Date,
+      },
+    ],
   },
   { timestamps: true },
 );
