@@ -4,7 +4,7 @@ import Issue from '../models/Issue.js';
 import Status from '../models/Status.js';
 import { sendDeadlineReminder } from '../services/mail.service.js';
 
-cron.schedule('* * * * *', async () => {
+cron.schedule('0 9 * * *', async () => {
   console.log('Running deadline reminder job...');
 
   const now = dayjs();
