@@ -11,9 +11,16 @@ import jwt from 'jsonwebtoken';
 import ProjectInvitation from '../models/ProjectInvitation.js';
 import ProjectJoinRequest from '../models/ProjectJoinRequest.js';
 import { sendInvitationEmail } from './mail.service.js';
+import { createGithubRepo } from './github.service.js';
 
 /* ===================== CREATE ===================== */
 export const createProjectService = async (data, userId) => {
+  const existed = await Project.findOne({ key: data.key });
+
+  if (existed) {
+    throw new Error('Project key already exists');
+  }
+
   const inviteCode = crypto.randomBytes(4).toString('hex');
 
   const project = await Project.create({
@@ -30,6 +37,15 @@ export const createProjectService = async (data, userId) => {
     { name: 'Kiểm tra', order: 2, project: project._id },
     { name: 'Hoàn thành', order: 3, project: project._id },
   ]);
+
+  // ===== CREATE GITHUB REPO =====
+  try {
+    const repo = await createGithubRepo(project.key, project.description);
+    project.githubRepo = repo.html_url;
+    await project.save();
+  } catch (error) {
+    console.error('Github repo creation failed:', error.message);
+  }
 
   emitProjectCreated(project._id, project);
 

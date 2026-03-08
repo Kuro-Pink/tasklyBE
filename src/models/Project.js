@@ -33,6 +33,9 @@ const projectSchema = new mongoose.Schema(
       type: String,
       unique: true,
     },
+    githubRepo: {
+      type: String,
+    },
   },
   { timestamps: true },
 );
