@@ -359,7 +359,11 @@ export const moveStatusService = async (id, statusId, userId) => {
 
   if (!issue) throw new ApiError(404, 'Issue not found');
 
-  await requireRole(issue.project, userId, ['Owner', 'Admin']);
+  if (status.order === 0 || status.order === 1) {
+    await requireRole(issue.project, userId, ['Owner', 'Admin', 'Member']);
+  } else {
+    await requireRole(issue.project, userId, ['Owner', 'Admin']);
+  }
 
   issue.status = statusId;
   await issue.save();
@@ -429,13 +433,15 @@ export const assignUserService = async (id, assigneeId, userId) => {
   });
 
   // NOTIFICATION
-  await createNotificationService({
-    user: assigneeId,
-    project: issue.project,
-    issue: issue._id,
-    type: 'ASSIGN',
-    message: `Bạn được giao công việc "${issue.title}"`,
-  });
+  if (assigneeId && assigneeId.toString() !== userId.toString()) {
+    await createNotificationService({
+      user: assigneeId,
+      project: issue.project,
+      issue: issue._id,
+      type: 'ASSIGN',
+      message: `Bạn được giao công việc "${issue.title}"`,
+    });
+  }
 
   /* ===== SOCKET ===== */
   emitIssueAssigned(issue.project, issue);

@@ -1,4 +1,11 @@
 import nodemailer from 'nodemailer';
+import Project from '../models/Project.js';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -21,4 +28,25 @@ export const sendInvitationEmail = async (email, projectName, token) => {
       <a href="${link}">${link}</a>
     `,
   });
+};
+
+export const sendDeadlineReminder = async (to, issue) => {
+  const project = await Project.findById(issue.project);
+
+  // Convert sang giờ Việt Nam
+  const deadlineVN = dayjs(issue.dueDate).tz('Asia/Ho_Chi_Minh').format('DD/MM/YYYY - HH:mm');
+
+  const mailOptions = {
+    from: `"Taskly System" <${process.env.MAIL_USER}>`,
+    to,
+    subject: `⏰ Issue gần đến hạn: "${project.key} - ${issue.number}: ${issue.title}"`,
+    html: `
+      <h3>Issue sắp đến hạn</h3>
+      <p><b>Công việc:</b> "${project.key} - ${issue.number}: ${issue.title}"</p>
+      <p><b>Hạn làm:</b> ${deadlineVN}</p>
+      <p>Vui lòng hoàn thành trước khi quá hạn.</p>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
 };

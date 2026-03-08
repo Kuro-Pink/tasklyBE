@@ -4,6 +4,7 @@ import app from './app.js';
 import connectDB from './config/db.js';
 import { initSocket } from './config/socket.js';
 import { setupSocket } from './socket/index.js';
+import './cron/deadlineReminder.js';
 
 dotenv.config();
 

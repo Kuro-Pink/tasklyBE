@@ -1,6 +1,7 @@
 import Comment from '../models/Comment.js';
 import Issue from '../models/Issue.js';
 import User from '../models/User.js';
+import Project from '../models/Project.js';
 import { extractMentions } from '../utils/mention.js';
 import ApiError from '../utils/ApiError.js';
 import { requireRole } from '../utils/permission.js';
@@ -24,14 +25,17 @@ export const createCommentService = async (issueId, content, userId) => {
   });
 
   await comment.populate('author', 'name email avatar');
+  const project = await Project.findById(issue.project);
 
-  await createActivityService({
-    project: issue.project,
-    issue: issue._id,
-    user: userId,
-    action: 'COMMENT',
-    content: `đã bình luận vào công việc`,
-  });
+  if (issue.assignee && issue.assignee.toString() !== userId.toString()) {
+    await createNotificationService({
+      user: issue.assignee,
+      type: 'COMMENT',
+      message: `Công việc "${project.key} - ${issue.number}: ${issue.title}" vừa có bình luận mới`,
+      project: issue.project,
+      issue: issue._id,
+    });
+  }
 
   /* ===== MENTION USER ===== */
   const mentions = extractMentions(content);
